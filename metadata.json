@@ -1,0 +1,7 @@
+{
+  "name": "CRATOR - Premium Cinematic Streaming",
+  "description": "Stream movies, exclusive series, anime, and 4K HDR originals with an ultra-modern cinematic viewing experience.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
