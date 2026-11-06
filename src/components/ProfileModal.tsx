@@ -34,6 +34,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   // MovieBox API Secret management
   const [workerSecretInput, setWorkerSecretInput] = useState<string>('');
+  const [adminTokenInput, setAdminTokenInput] = useState<string>('');
   const [isVerifyingWorker, setIsVerifyingWorker] = useState<boolean>(false);
   const [apiStatus, setApiStatus] = useState<MovieBoxStatus | null>(null);
 
@@ -56,15 +57,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       onShowToast('Please enter your MovieBox Worker Secret');
       return;
     }
+    if (!adminTokenInput.trim()) {
+      onShowToast('Enter the CRATOR admin token configured on the server');
+      return;
+    }
 
     setIsVerifyingWorker(true);
-    const res = await updateMovieBoxServerSecret(workerSecretInput.trim());
+    const res = await updateMovieBoxServerSecret(workerSecretInput.trim(), adminTokenInput.trim());
     setIsVerifyingWorker(false);
 
     onShowToast(res.message);
     const updated = await getMovieBoxConfigStatus();
     setApiStatus(updated);
     setWorkerSecretInput('');
+    setAdminTokenInput('');
   };
 
   const handleSaveTmdbKey = async () => {
@@ -225,6 +231,17 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] text-purple-200/80 font-medium">CRATOR Admin Token</label>
+              <input
+                type="password"
+                value={adminTokenInput}
+                onChange={(e) => setAdminTokenInput(e.target.value)}
+                placeholder="Server CRATOR_ADMIN_TOKEN"
+                autoComplete="off"
+                className="w-full bg-[#1A122B] border border-purple-900/40 focus:border-purple-500 rounded-xl px-3 py-1.5 text-xs text-white placeholder-purple-400/40 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
+              />
+            </div>
+            <div className="space-y-1.5 pt-1">
               <label className="text-[11px] text-purple-200/80 font-medium">
                 Update Worker Secret (X-Worker-Secret header)
               </label>
@@ -239,7 +256,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveWorkerSecret}
-                  disabled={isVerifyingWorker || !workerSecretInput.trim()}
+                  disabled={isVerifyingWorker || !workerSecretInput.trim() || !adminTokenInput.trim()}
                   className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
                 >
                   {isVerifyingWorker ? (

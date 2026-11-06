@@ -842,8 +842,9 @@ var index_default = {
     }
     const streamMatch = path.match(/^\/stream\/([^/]+)$/);
     if (streamMatch && request.method === "GET") {
-      const se = parseInt(url.searchParams.get("se") ?? "0");
-      const ep = parseInt(url.searchParams.get("ep") ?? "0");
+      const se = Number(url.searchParams.get("se") ?? "0");
+      const ep = Number(url.searchParams.get("ep") ?? "0");
+      if (!Number.isInteger(se) || !Number.isInteger(ep) || se < 0 || ep < 0 || (se === 0) !== (ep === 0)) return err("se and ep must both be zero for a movie or positive integers for an episode.");
       return handleStream(streamMatch[1], se, ep, env2);
     }
     const downloadMatch = path.match(/^\/download\/([^/]+)$/);

@@ -60,6 +60,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Streaming & Quality State
   const [activeStreamUrl, setActiveStreamUrl] = useState<string>('');
+  const [activeStreamFormat, setActiveStreamFormat] = useState<StreamOption['format']>('unknown');
   const [streamOptions, setStreamOptions] = useState<StreamOption[]>([]);
   const [selectedQuality, setSelectedQuality] = useState<string>('Auto');
   const [isLoadingStream, setIsLoadingStream] = useState<boolean>(true);
@@ -97,6 +98,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setStreamError(null);
     setStreamErrorCode(null);
     setActiveStreamUrl('');
+    setActiveStreamFormat('unknown');
     setStreamOptions([]);
 
     const seasonNum = episode?.seasonNumber ?? 0;
@@ -117,6 +119,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
         setIsPlaying(false);
         setActiveStreamUrl('');
+        setActiveStreamFormat('unknown');
         setStreamOptions([]);
         setStreamError(result.error || 'MovieBox API returned no stream URL for this title.');
         setStreamErrorCode(result.errorCode || 'STREAM_UNAVAILABLE');
@@ -132,6 +135,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ? result.streams 
         : [{ url: result.streamUrl, quality: 'Auto', format: result.format || 'mp4' }];
       setStreamOptions(options);
+      setActiveStreamFormat(options[0]?.format || result.format || 'unknown');
       setSelectedQuality(options[0].quality || 'Auto');
       setStreamError(null);
     } catch (err: any) {
@@ -143,6 +147,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
       setIsPlaying(false);
       setActiveStreamUrl('');
+      setActiveStreamFormat('unknown');
       setStreamOptions([]);
       setStreamError(err.message || 'Failed to communicate with stream backend');
       setStreamErrorCode('STREAM_FETCH_EXCEPTION');
@@ -166,7 +171,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       hlsRef.current = null;
     }
 
-    const isHls = activeStreamUrl.includes('.m3u8');
+    const isHls = activeStreamFormat === 'hls' || (() => {
+      try { return new URL(activeStreamUrl).pathname.toLowerCase().endsWith('.m3u8'); } catch { return false; }
+    })();
+
+    if (activeStreamFormat === 'dash') {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      setIsPlaying(false);
+      setStreamError('This browser player cannot play a DASH stream. Choose another available quality.');
+      setStreamErrorCode('UNSUPPORTED_DASH');
+      return;
+    }
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
@@ -206,6 +223,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               if (nextOption) {
                 console.log('[CRATOR Player] Switching to alternate stream option for same movie:', nextOption.quality);
                 setActiveStreamUrl(nextOption.url);
+                setActiveStreamFormat(nextOption.format || 'unknown');
                 setSelectedQuality(nextOption.quality);
               } else {
                 setStreamError('The stream source could not be decoded in this browser environment.');
@@ -242,7 +260,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         hlsRef.current = null;
       }
     };
-  }, [activeStreamUrl]);
+  }, [activeStreamUrl, activeStreamFormat]);
 
   // Video error handler for native HTML5 video errors
   const handleVideoError = () => {
@@ -264,6 +282,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (altOption) {
       console.log('[CRATOR Player] Retrying with alternate stream quality for same title:', altOption.quality);
       setActiveStreamUrl(altOption.url);
+      setActiveStreamFormat(altOption.format || 'unknown');
       setSelectedQuality(altOption.quality);
       return;
     }
@@ -341,6 +360,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleQualityChange = (opt: StreamOption) => {
     setSelectedQuality(opt.quality);
     setActiveStreamUrl(opt.url);
+    setActiveStreamFormat(opt.format || 'unknown');
+    setStreamError(null);
+    setStreamErrorCode(null);
     setActiveMenu('none');
   };
 

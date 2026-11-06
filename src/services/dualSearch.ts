@@ -182,7 +182,7 @@ export async function executeDualSearch(
         movieBoxSubjectId: subjectId,
         hasMovieBoxMatch: true,
         matchConfidence: confidence,
-        streamStatus: 'available',
+        streamStatus: 'unverified',
         fallbackPosterUrl: match.posterUrl || undefined,
         fallbackBackdropUrl: match.backdropUrl || undefined,
       };
@@ -202,7 +202,7 @@ export async function executeDualSearch(
         movieBoxSubjectId: localMatch.movieBoxSubjectId,
         hasMovieBoxMatch: Boolean(localMatch.movieBoxSubjectId),
         matchConfidence: localMatch.movieBoxSubjectId ? 'verified' : 'unmatched',
-        streamStatus: localMatch.movieBoxSubjectId ? 'available' : 'unavailable',
+        streamStatus: localMatch.movieBoxSubjectId ? 'unverified' : 'unavailable',
         fallbackPosterUrl: localMatch.posterUrl,
       };
     }
@@ -224,7 +224,7 @@ export async function executeDualSearch(
         movieBoxSubjectId: rawId,
         hasMovieBoxMatch: true,
         matchConfidence: 'verified',
-        streamStatus: 'available',
+        streamStatus: 'unverified',
       });
     }
   }

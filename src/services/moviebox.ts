@@ -83,7 +83,7 @@ export function mapMovieBoxSubjectToMediaItem(raw: any): MediaItem {
   // Determine media type
   let type: MediaType = 'movie';
   const rawType = String(raw.subjectType || raw.type || '').toLowerCase();
-  if (rawType === '2' || rawType.includes('tv') || rawType.includes('series') || rawType.includes('show')) {
+  if (rawType === '2' || rawType === '7' || rawType.includes('tv') || rawType.includes('series') || rawType.includes('show') || rawType.includes('shorts')) {
     type = 'series';
   } else if (rawType === '3' || rawType.includes('anime')) {
     type = 'anime';
@@ -158,7 +158,8 @@ export function mapMovieBoxSubjectToMediaItem(raw: any): MediaItem {
     movieBoxSubjectId: raw.subjectId ? String(raw.subjectId) : undefined,
     hasMovieBoxMatch: Boolean(raw.subjectId),
     matchConfidence: raw.subjectId ? 'verified' : 'unmatched',
-    streamStatus: raw.subjectId ? 'available' : 'unavailable',
+    // A catalogue match proves linkage only; availability is known after a stream lookup.
+    streamStatus: raw.subjectId ? 'unverified' : 'unavailable',
     fallbackPosterUrl: raw.thumbnail || raw.poster || raw.cover || undefined,
   };
 }
@@ -396,6 +397,9 @@ export async function getMovieBoxStream(
   episode: number = 0,
   title?: string
 ): Promise<MovieBoxStreamResult> {
+  if (!Number.isInteger(season) || !Number.isInteger(episode) || season < 0 || episode < 0 || ((season === 0) !== (episode === 0))) {
+    return { error: 'Season and episode must both be zero for a movie or positive integers for an episode.', errorCode: 'INVALID_EPISODE' };
+  }
   try {
     let resolvedSubjectId = subjectId;
     let resolvedTitle = title;
@@ -450,36 +454,52 @@ export async function getMovieBoxStream(
       };
     }
 
-    const payload = data.data || data;
+    const payload = data?.data ?? data;
 
     // Detect format and extract streams
     const streams: StreamOption[] = [];
     let primaryUrl = '';
-    let format: 'hls' | 'mp4' | 'dash' | 'unknown' = 'mp4';
+    let format: 'hls' | 'mp4' | 'dash' | 'unknown' = 'unknown';
+    const getFormat = (url: string, declared?: string): 'hls' | 'mp4' | 'dash' | 'unknown' => {
+      const declaredFormat = String(declared || '').toLowerCase();
+      if (['hls', 'mp4', 'dash'].includes(declaredFormat)) return declaredFormat as 'hls' | 'mp4' | 'dash';
+      try {
+        const pathname = new URL(url).pathname.toLowerCase();
+        if (pathname.endsWith('.m3u8')) return 'hls';
+        if (pathname.endsWith('.mpd')) return 'dash';
+        if (/\.(mp4|m4v|webm|mov)$/.test(pathname)) return 'mp4';
+      } catch { /* invalid URLs are filtered below */ }
+      return 'unknown';
+    };
+    const isHttpUrl = (value: unknown): value is string => {
+      if (typeof value !== 'string') return false;
+      try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
+    };
 
-    if (typeof payload === 'string' && (payload.startsWith('http://') || payload.startsWith('https://'))) {
+    if (isHttpUrl(payload)) {
       primaryUrl = payload;
-      format = payload.includes('.m3u8') ? 'hls' : 'mp4';
+      format = getFormat(payload);
       streams.push({ url: payload, quality: 'Auto', format });
     } else if (payload && typeof payload === 'object') {
       const singleUrl = payload.url || payload.streamUrl || payload.playUrl || payload.fileUrl;
-      if (singleUrl && typeof singleUrl === 'string' && (singleUrl.startsWith('http://') || singleUrl.startsWith('https://'))) {
+      if (isHttpUrl(singleUrl)) {
         primaryUrl = singleUrl;
-        format = primaryUrl.includes('.m3u8') ? 'hls' : 'mp4';
+        format = getFormat(primaryUrl, payload.format);
         streams.push({ url: primaryUrl, quality: payload.quality || payload.resolution || 'Auto', format });
       }
 
-      if (Array.isArray(payload.streams || payload.qualities || payload.list || payload.urls)) {
-        const list = payload.streams || payload.qualities || payload.list || payload.urls;
+      const candidates = Array.isArray(payload) ? payload : payload.streams || payload.qualities || payload.list || payload.urls;
+      if (Array.isArray(candidates)) {
+        const list = candidates;
         for (const item of list) {
-          const u = item.url || item.playUrl || item.streamUrl || (typeof item === 'string' ? item : '');
-          if (u && (u.startsWith('http://') || u.startsWith('https://'))) {
-            const itemFormat = u.includes('.m3u8') ? 'hls' : 'mp4';
+          const u = typeof item === 'string' ? item : item?.url || item?.playUrl || item?.streamUrl;
+          if (isHttpUrl(u)) {
+            const itemFormat = getFormat(u, item?.format);
             streams.push({
               url: u,
-              quality: item.quality || item.resolution || item.name || 'Auto',
+              quality: item?.quality || item?.resolution || item?.name || 'Auto',
               format: itemFormat,
-              size: item.size,
+              size: item?.size,
             });
           }
         }
@@ -488,7 +508,7 @@ export async function getMovieBoxStream(
 
     if (!primaryUrl && streams.length > 0) {
       primaryUrl = streams[0].url;
-      format = streams[0].format || 'mp4';
+      format = streams[0].format || 'unknown';
     }
 
     // Validate that we actually received a playable URL
@@ -521,15 +541,18 @@ export async function getMovieBoxStream(
 // 9. Update/Save Worker Secret on Server
 export async function updateMovieBoxServerSecret(
   secret: string, 
+  adminToken: string,
   apiUrl?: string
 ): Promise<{ success: boolean; verified: boolean; message: string }> {
   try {
     const res = await fetch('/api/moviebox/set-secret', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Crator-Admin-Token': adminToken },
       body: JSON.stringify({ secret, apiUrl }),
     });
-    return await res.json();
+    const data = await res.json();
+    if (!res.ok) return { success: false, verified: false, message: data.error || `Request failed with status ${res.status}` };
+    return data;
   } catch (err: any) {
     return {
       success: false,

@@ -4,6 +4,7 @@ import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { timingSafeEqual } from 'crypto';
 import { fileURLToPath } from 'url';
 
 // Load environment variables from .env
@@ -553,6 +554,17 @@ app.get('/api/moviebox/status', async (_req: Request, res: Response) => {
 });
 
 app.post('/api/moviebox/set-secret', async (req: Request, res: Response) => {
+  const configuredAdminToken = process.env.CRATOR_ADMIN_TOKEN || '';
+  const suppliedAdminToken = req.get('X-Crator-Admin-Token') || '';
+  if (!configuredAdminToken) {
+    return res.status(503).json({ success: false, verified: false, error: 'Secret updates are disabled until CRATOR_ADMIN_TOKEN is configured on the server.' });
+  }
+  const expected = Buffer.from(configuredAdminToken);
+  const supplied = Buffer.from(suppliedAdminToken);
+  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) {
+    return res.status(401).json({ success: false, verified: false, error: 'Admin token is missing or invalid.', code: 'ADMIN_AUTH_REQUIRED' });
+  }
+
   const { secret, apiUrl } = req.body || {};
 
   if (!secret || typeof secret !== 'string') {
@@ -952,40 +964,14 @@ app.get('/api/moviebox/stream/:subjectId', async (req: Request, res: Response) =
     requiresAuth: true,
   });
 
-  if (result.ok && result.data && (result.data.url || result.data.streams?.length > 0)) {
+  if (result.ok && result.data && (typeof result.data.url === 'string' || (Array.isArray(result.data.streams) && result.data.streams.length > 0))) {
     return res.json(result.data);
   }
 
-  // 2. Check H5 play endpoint
-  try {
-    const h5PlayRes = await fetch(`https://h5.aoneroom.com/wefeed-h5-bff/web/subject/play?subjectId=${encodeURIComponent(subjectId)}&se=${se}&ep=${ep}`, {
-      headers: {
-        'X-Client-Info': '{"timezone":"Africa/Lagos"}',
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0',
-        'X-Forwarded-For': '197.210.65.1',
-      },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (h5PlayRes.ok) {
-      const h5PlayJson = await h5PlayRes.json() as any;
-      if (h5PlayJson?.data?.streams && h5PlayJson.data.streams.length > 0) {
-        return res.json(h5PlayJson.data);
-      }
-      if (h5PlayJson?.data && h5PlayJson.data.hasResource === false) {
-        return res.status(404).json({
-          ok: false,
-          status: 404,
-          error: 'Upstream MovieBox provider reports no stream resources available for this title (hasResource: false).',
-          code: 'NO_UPSTREAM_STREAM',
-          providerStatus: 'unsupported_or_withdrawn'
-        });
-      }
-    }
-  } catch {}
-
+  // Playback must use the configured Worker result; do not fall back to a
+  // separate provider endpoint when the Worker reports no accessible stream.
   if (!result.ok) return res.status(result.status || 500).json(result);
-  res.json(result.data);
+  return res.status(502).json({ error: 'MovieBox returned an invalid or empty stream response.', code: 'INVALID_STREAM_RESPONSE' });
 });
 
 app.get('/api/moviebox/stream/:subjectId/all', async (req: Request, res: Response) => {
