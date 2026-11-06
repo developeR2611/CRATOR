@@ -1,0 +1,20 @@
+{
+  "name": "moviebox-worker",
+  "version": "1.0.0",
+  "description": "MovieBox Mobile API proxy — Cloudflare Worker for D.Verse",
+  "private": true,
+  "scripts": {
+    "dev": "npx esbuild src/index.ts --bundle --platform=node --outfile=scratch/dist.js --format=esm && node scratch/run_local.js",
+    "build": "npx esbuild src/vercel_adapter.ts --bundle --platform=node --outfile=api/index.js --format=esm --external:undici",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "undici": "^6.21.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260707.1",
+    "typescript": "^5.5.2",
+    "wrangler": "^4.108.0"
+  }
+}

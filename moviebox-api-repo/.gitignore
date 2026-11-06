@@ -1,0 +1,9 @@
+node_modules
+.wrangler
+dist
+.env
+.dev.vars
+scratch/dist.js
+scratch/kv_store.json
+scratch/kv_val.json
+api/index.js
