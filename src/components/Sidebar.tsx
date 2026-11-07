@@ -11,7 +11,8 @@ import {
   User, 
   Compass,
   Menu,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { StreamingPlatform } from '../types';
 import { PLATFORMS_LIST } from '../data/mockData';
@@ -28,6 +29,8 @@ interface SidebarProps {
   onOpenProfile: () => void;
   mobileMenuOpen: boolean;
   onToggleMobileMenu: () => void;
+  onRefreshHome?: () => void;
+  isRefreshingHome?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -40,6 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   mobileMenuOpen,
   onToggleMobileMenu,
+  onRefreshHome,
+  isRefreshingHome = false,
 }) => {
   const primaryNavItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
@@ -55,7 +60,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Top Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-[#08060D]/90 backdrop-blur-md border-b border-purple-900/20 px-4 flex items-center justify-between">
         <button 
-          onClick={() => onSelectTab('home')}
+          onClick={() => {
+            if (currentTab === 'home') {
+              onRefreshHome?.();
+            } else {
+              onSelectTab('home');
+            }
+          }}
           className="flex items-center gap-2.5 focus:outline-none"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
@@ -64,7 +75,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="font-display font-black text-xl tracking-wider text-white">CRATOR</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onRefreshHome?.()}
+            disabled={isRefreshingHome}
+            className="p-2 rounded-lg text-purple-200/80 hover:text-white hover:bg-purple-900/30 transition-colors disabled:opacity-50 cursor-pointer"
+            title="Refresh Feeds"
+            aria-label="Refresh feeds"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshingHome ? 'animate-spin text-purple-400' : ''}`} />
+          </button>
           <button
             onClick={() => onSelectTab('search')}
             className="p-2 rounded-lg text-purple-200/80 hover:text-white hover:bg-purple-900/30 transition-colors"
@@ -145,10 +165,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => {
-                    onSelectTab(item.id);
+                    if (item.id === 'home' && isActive) {
+                      onRefreshHome?.();
+                    } else {
+                      onSelectTab(item.id);
+                    }
                     if (mobileMenuOpen) onToggleMobileMenu();
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group cursor-pointer ${
                     isActive
                       ? 'bg-gradient-to-r from-purple-600/30 to-purple-800/20 text-white border border-purple-500/30 shadow-sm shadow-purple-900/30'
                       : 'text-purple-200/70 hover:text-white hover:bg-purple-950/40'
@@ -161,11 +185,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span>{item.label}</span>
                   </div>
 
-                  {typeof item.badge === 'number' && item.badge > 0 && (
+                  {item.id === 'home' && isActive ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRefreshHome?.();
+                      }}
+                      title="Refresh Feeds"
+                      className="p-1 rounded text-purple-400/70 hover:text-purple-200 hover:bg-purple-900/40 transition-colors"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingHome ? 'animate-spin text-purple-300' : ''}`} />
+                    </span>
+                  ) : typeof item.badge === 'number' && item.badge > 0 ? (
                     <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-600 text-white">
                       {item.badge}
                     </span>
-                  )}
+                  ) : null}
                 </button>
               );
             })}

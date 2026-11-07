@@ -183,6 +183,30 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     }
   };
 
+  const isTv = activeItem.type === 'series' || activeItem.type === 'anime' || (activeItem.type as any) === 'tv';
+
+  const handlePlayCurrent = (ep?: Episode) => {
+    if (ep) {
+      onPlay(activeItem, ep);
+      return;
+    }
+    if (isTv) {
+      const currentSeasonObj = seasons.find((s) => s.seasonNumber === selectedSeasonNumber) || seasons[0];
+      const firstEp = currentSeasonObj?.episodes?.[0] || {
+        id: `${activeItem.id}-s${selectedSeasonNumber}e1`,
+        episodeNumber: 1,
+        seasonNumber: selectedSeasonNumber,
+        title: `Episode 1`,
+        runtime: '45m',
+        synopsis: activeItem.synopsis,
+        thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
+      };
+      onPlay(activeItem, firstEp);
+    } else {
+      onPlay(activeItem);
+    }
+  };
+
   const hasStreamMatch = Boolean(
     activeItem.movieBoxSubjectId ||
     activeItem.hasMovieBoxMatch ||
@@ -191,109 +215,103 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-0 md:p-4 lg:p-6 animate-fadeIn">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-start justify-center p-0 sm:p-4 lg:p-6 animate-fadeIn"
+      onClick={onClose}
+    >
       {/* Modal Container */}
       <div 
-        className="relative w-full max-w-5xl bg-[#0E0A1A] rounded-none md:rounded-2xl overflow-hidden border border-purple-900/40 shadow-2xl shadow-purple-950/80 my-0 md:my-8"
+        className="relative w-full max-w-5xl bg-[#0E0A1A] rounded-none sm:rounded-2xl overflow-hidden border border-purple-900/40 shadow-2xl shadow-purple-950/80 my-0 sm:my-8 text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black text-white/80 hover:text-white border border-white/10 backdrop-blur-md transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-40 p-2.5 rounded-full bg-black/70 hover:bg-purple-900/80 text-white/90 hover:text-white border border-white/20 backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
           aria-label="Close dialog"
+          title="Close (Esc)"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Cinematic Backdrop Area */}
-        <div className="relative w-full h-[320px] md:h-[420px] overflow-hidden">
+        <div className="relative w-full h-[240px] sm:h-[320px] md:h-[400px] overflow-hidden bg-[#0A0714] select-none">
           <ImageWithFallback
             src={activeItem.backdropUrl || activeItem.posterUrl}
             fallbackSrc={activeItem.fallbackBackdropUrl || activeItem.fallbackPosterUrl}
             alt={activeItem.title}
             fallbackTitle={activeItem.title}
             containerClassName="w-full h-full"
-            className="w-full h-full object-cover filter brightness-[0.75]"
+            className="w-full h-full object-cover filter brightness-[0.70]"
           />
 
           {/* Gradients */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0E0A1A] via-[#0E0A1A]/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0E0A1A] via-transparent to-transparent w-1/2" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0E0A1A]/80 via-transparent to-transparent w-full sm:w-2/3" />
+          <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
-          {/* Play Preview floating CTA */}
-          <div className="absolute bottom-6 left-6 md:left-10 z-20 flex items-center gap-3 flex-wrap">
-            {hasStreamMatch ? (
-              <button
-                onClick={() => onPlay(activeItem)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-semibold text-sm shadow-xl shadow-purple-600/40 transition-all transform hover:scale-102 cursor-pointer"
-              >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Play / Check Stream</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => onShowToast(`"${activeItem.title}" is available for TMDB discovery. Streaming has not yet been indexed on MovieBox server.`)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#1E142E]/90 hover:bg-[#281B3D] text-purple-200 border border-purple-700/50 font-medium text-xs shadow-lg transition-all cursor-pointer"
-                title="Streaming not indexed on MovieBox"
-              >
-                <AlertCircle className="w-4 h-4 text-purple-400" />
-                <span>Stream Unavailable (TMDB Only)</span>
-              </button>
+          {/* Floating Top Badges */}
+          <div className="absolute top-4 left-4 sm:left-6 z-30 flex items-center gap-2 flex-wrap pointer-events-none">
+            <span className="px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-mono text-[11px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>CineSRC 4K</span>
+            </span>
+
+            {activeItem.platform && (
+              <span className="px-2.5 py-1 rounded-full bg-black/60 border border-white/15 text-purple-200 text-[11px] font-medium backdrop-blur-md">
+                {activeItem.platform}
+              </span>
             )}
 
-            <button
-              onClick={() => onToggleWatchlist(activeItem)}
-              className={`p-3 rounded-xl border backdrop-blur-md transition-all cursor-pointer ${
-                inWatchlist
-                  ? 'bg-purple-600 text-white border-purple-400'
-                  : 'bg-black/50 text-purple-200 border-purple-800/40 hover:bg-black/80 hover:text-white'
-              }`}
-              title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
-            >
-              <Bookmark className={`w-4 h-4 ${inWatchlist ? 'fill-white' : ''}`} />
-            </button>
+            {hasStreamMatch && (
+              <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 font-mono text-[10px] hidden sm:flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                <span>MovieBox Alt</span>
+              </span>
+            )}
+          </div>
 
+          {/* Center Cinematic Play Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <button
-              onClick={handleFavorite}
-              className={`p-3 rounded-xl border backdrop-blur-md transition-all cursor-pointer ${
-                isFavorite
-                  ? 'bg-rose-600 text-white border-rose-400'
-                  : 'bg-black/50 text-purple-200 border-purple-800/40 hover:bg-black/80 hover:text-white'
-              }`}
-              title={isFavorite ? 'Favorited' : 'Add to Favorites'}
+              onClick={() => handlePlayCurrent()}
+              className="pointer-events-auto w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-purple-600/80 hover:bg-purple-600 text-white flex items-center justify-center shadow-2xl shadow-purple-600/60 backdrop-blur-sm border border-purple-400/40 transform hover:scale-110 active:scale-95 transition-all cursor-pointer group"
+              title="Click to Play"
+              aria-label="Play video"
             >
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
-            </button>
-
-            <button
-              onClick={handleShare}
-              className="p-3 rounded-xl bg-black/50 text-purple-200 border border-purple-800/40 hover:bg-black/80 hover:text-white backdrop-blur-md transition-all cursor-pointer"
-              title="Share Title"
-            >
-              <Share2 className="w-4 h-4" />
+              <Play className="w-6 h-6 fill-white ml-1 group-hover:scale-105 transition-transform" />
             </button>
           </div>
         </div>
 
         {/* Details Content Section */}
-        <div className="p-6 md:p-10 space-y-8">
+        <div className="px-5 sm:px-8 md:px-10 pb-8 sm:pb-10 space-y-8">
           {/* Header & Meta Row */}
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            {/* Vertical Poster Thumbnail */}
-            <div className="hidden sm:block w-36 md:w-44 shrink-0 -mt-20 z-20 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-purple-500/30">
+          <div className="flex flex-col sm:flex-row gap-5 sm:gap-7 md:gap-8 items-start -mt-16 sm:-mt-24 md:-mt-32 relative z-20">
+            {/* Vertical Poster Thumbnail (Visible on ALL devices) */}
+            <div className="w-28 sm:w-36 md:w-48 shrink-0 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border-2 border-purple-500/40 ring-1 ring-purple-400/20 bg-[#140F22] relative mx-auto sm:mx-0 group">
               <ImageWithFallback
-                src={activeItem.posterUrl}
-                fallbackSrc={activeItem.fallbackPosterUrl}
+                src={activeItem.posterUrl || activeItem.backdropUrl}
+                fallbackSrc={activeItem.fallbackPosterUrl || activeItem.fallbackBackdropUrl}
                 alt={activeItem.title}
                 fallbackTitle={activeItem.title}
                 containerClassName="w-full h-full"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
+              <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
+                <span className="text-[9px] font-mono font-bold text-purple-200/90 uppercase px-1 rounded bg-black/60">
+                  {activeItem.type}
+                </span>
+                <span className="text-[9px] font-mono font-bold text-amber-300 px-1 rounded bg-black/60">
+                  ★ {activeItem.rating.toFixed(1)}
+                </span>
+              </div>
             </div>
 
-            {/* Info Column */}
-            <div className="flex-1 space-y-3">
+            {/* Info & Action Column */}
+            <div className="flex-1 space-y-4 pt-1 sm:pt-6 md:pt-10 text-left w-full">
+              {/* Metadata Badges */}
               <div className="flex items-center gap-2 flex-wrap text-xs text-purple-200/70 font-medium">
                 <span className="flex items-center gap-1 font-bold text-amber-400">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
@@ -319,43 +337,82 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
                 <span className="text-purple-400/40" aria-hidden="true">·</span>
                 <span className="text-purple-300">{activeItem.audio}</span>
+              </div>
 
-                <span className="text-purple-400/40" aria-hidden="true">·</span>
-                {activeItem.streamStatus === 'available' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Stream Ready</span>
-                  </span>
-                ) : hasStreamMatch ? (
-                  <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 font-mono text-[10px] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                    <span>MovieBox Linked</span>
-                    {activeItem.movieBoxSubjectId && <span className="opacity-60 text-[9px]">#{activeItem.movieBoxSubjectId.slice(-6)}</span>}
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 font-mono text-[10px] flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-purple-400" />
-                    <span>TMDB Live Metadata</span>
-                  </span>
+              {/* Title */}
+              <div>
+                <h2 className="font-display font-black text-2xl sm:text-3xl md:text-4xl text-white tracking-tight leading-tight">
+                  {activeItem.title}
+                </h2>
+                {activeItem.tagline && (
+                  <p className="text-sm italic text-purple-300/80 font-serif mt-1">
+                    "{activeItem.tagline}"
+                  </p>
                 )}
               </div>
 
-              <h2 className="font-display font-black text-2xl sm:text-4xl text-white tracking-tight">
-                {activeItem.title}
-              </h2>
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-3 flex-wrap pt-1">
+                {/* Watch Now (CineSRC 4K) Button */}
+                <button
+                  onClick={() => handlePlayCurrent()}
+                  className="group flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm shadow-xl shadow-purple-600/40 hover:shadow-purple-500/60 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  title="Stream in CineSRC 4K Player"
+                >
+                  <Play className="w-4 h-4 fill-white group-hover:scale-110 transition-transform" />
+                  <span>
+                    {isTv 
+                      ? `Watch S${selectedSeasonNumber}:E1 (CineSRC 4K)`
+                      : 'Watch Now (CineSRC 4K)'}
+                  </span>
+                </button>
 
-              {activeItem.tagline && (
-                <p className="text-sm italic text-purple-300/80 font-serif">
-                  "{activeItem.tagline}"
-                </p>
-              )}
+                {/* Watchlist Button */}
+                <button
+                  onClick={() => onToggleWatchlist(activeItem)}
+                  className={`flex items-center gap-2 px-4 py-3.5 rounded-xl border backdrop-blur-md transition-all text-xs font-semibold cursor-pointer ${
+                    inWatchlist
+                      ? 'bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-600/30'
+                      : 'bg-[#181126] text-purple-200 border-purple-900/60 hover:bg-purple-900/40 hover:text-white'
+                  }`}
+                  title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
+                >
+                  {inWatchlist ? <Check className="w-4 h-4 text-white" /> : <Bookmark className="w-4 h-4" />}
+                  <span>{inWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
+                </button>
 
+                {/* Favorite Button */}
+                <button
+                  onClick={handleFavorite}
+                  className={`flex items-center gap-2 px-4 py-3.5 rounded-xl border backdrop-blur-md transition-all text-xs font-semibold cursor-pointer ${
+                    isFavorite
+                      ? 'bg-rose-600 text-white border-rose-400 shadow-md shadow-rose-600/30'
+                      : 'bg-[#181126] text-purple-200 border-purple-900/60 hover:bg-purple-900/40 hover:text-white'
+                  }`}
+                  title={isFavorite ? 'Favorited' : 'Add to Favorites'}
+                >
+                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white text-white' : ''}`} />
+                  <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
+                </button>
+
+                {/* Share Button */}
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 px-4 py-3.5 rounded-xl bg-[#181126] text-purple-200 border border-purple-900/60 hover:bg-purple-900/40 hover:text-white backdrop-blur-md transition-all text-xs font-semibold cursor-pointer"
+                  title="Share Title"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Share</span>
+                </button>
+              </div>
+
+              {/* Synopsis */}
               <p className="text-sm text-purple-100/80 leading-relaxed pt-1">
                 {activeItem.synopsis}
               </p>
 
               {/* Badges / Genres */}
-              <div className="flex items-center gap-2 flex-wrap pt-2">
+              <div className="flex items-center gap-2 flex-wrap pt-1">
                 <span className="text-xs text-purple-300/60 font-semibold mr-1">Genres:</span>
                 {activeItem.genres.map((genre) => (
                   <span
@@ -496,22 +553,44 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-[#140F22] border border-purple-900/30 text-xs text-purple-300/70 flex items-center justify-between">
-                  <span>Season information is available via live MovieBox worker.</span>
-                  <button
-                    onClick={() => onPlay(activeItem, {
-                      id: `${activeItem.id}-ep1`,
-                      episodeNumber: 1,
-                      seasonNumber: 1,
-                      title: 'Episode 1',
-                      runtime: '45m',
-                      synopsis: activeItem.synopsis,
-                      thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
-                    })}
-                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
-                  >
-                    Play Episode 1
-                  </button>
+                <div className="p-5 rounded-2xl bg-[#140F22] border border-purple-900/40 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-purple-300/80 font-medium">
+                      Select any episode to stream instantly in CineSRC 4K:
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
+                      Season {selectedSeasonNumber} Ready
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 pt-1">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((epNum) => (
+                      <button
+                        key={`quick-ep-${epNum}`}
+                        onClick={() =>
+                          onPlay(activeItem, {
+                            id: `${activeItem.id}-s${selectedSeasonNumber}e${epNum}`,
+                            episodeNumber: epNum,
+                            seasonNumber: selectedSeasonNumber,
+                            title: `Episode ${epNum}`,
+                            runtime: '45m',
+                            synopsis: activeItem.synopsis,
+                            thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
+                          })
+                        }
+                        className="group flex items-center justify-between p-2.5 rounded-xl bg-[#181126] hover:bg-purple-600 border border-purple-900/40 hover:border-purple-400 transition-all text-left cursor-pointer"
+                      >
+                        <div className="overflow-hidden">
+                          <span className="text-[11px] font-bold text-white group-hover:text-white block">
+                            Ep {epNum}
+                          </span>
+                          <span className="text-[10px] text-purple-400 group-hover:text-purple-100 font-mono">
+                            S{selectedSeasonNumber}
+                          </span>
+                        </div>
+                        <Play className="w-3.5 h-3.5 text-purple-400 group-hover:text-white fill-current shrink-0" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

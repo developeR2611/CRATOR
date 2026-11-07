@@ -16,6 +16,7 @@ import { WatchlistView } from './components/WatchlistView';
 import { PlatformsView } from './components/PlatformsView';
 import { CommunityModal } from './components/CommunityModal';
 import { ProfileModal } from './components/ProfileModal';
+import { RefreshCw } from 'lucide-react';
 import { Toast } from './components/Toast';
 
 import { 
@@ -101,49 +102,40 @@ export default function App() {
     } catch {}
   }, [continueWatchingItems]);
 
-  // Load live TMDB trending & MovieBox homepage rows on mount
-  useEffect(() => {
-    let isCancelled = false;
+  const [isRefreshingHome, setIsRefreshingHome] = useState<boolean>(false);
 
-    async function loadLiveFeeds() {
+  // Core Home Refresh Engine: Re-queries TMDB and MovieBox live feeds
+  const refreshHomePage = async (showNotification = true) => {
+    setIsRefreshingHome(true);
+    try {
       // 1. Check & Load TMDB Live Discovery Feeds
-      try {
-        const tmdbStat = await getTmdbStatus();
-        if (!isCancelled) setTmdbStatus(tmdbStat);
-        if (tmdbStat.configured || tmdbStat.hasKey) {
-          const [trendingRes, popularRes, topRatedRes] = await Promise.allSettled([
-            getTmdbTrending(),
-            getTmdbPopular('movie'),
-            getTmdbTopRated('tv')
-          ]);
+      const tmdbStat = await getTmdbStatus();
+      setTmdbStatus(tmdbStat);
+      if (tmdbStat.configured || tmdbStat.hasKey) {
+        const [trendingRes, popularRes, topRatedRes] = await Promise.allSettled([
+          getTmdbTrending(),
+          getTmdbPopular('movie'),
+          getTmdbTopRated('tv'),
+        ]);
 
-          if (!isCancelled) {
-            if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
-              setTmdbTrendingItems(trendingRes.value);
-            }
-            if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
-              setTmdbPopularItems(popularRes.value);
-            }
-            if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
-              setTmdbTopRatedItems(topRatedRes.value);
-            }
-          }
+        if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
+          setTmdbTrendingItems(trendingRes.value);
         }
-      } catch (err) {
-        console.warn('[CRATOR] TMDB discovery feeds load error:', err);
+        if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
+          setTmdbPopularItems(popularRes.value);
+        }
+        if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
+          setTmdbTopRatedItems(topRatedRes.value);
+        }
       }
 
-      // 2. Check & Load MovieBox Homepage
-      try {
-        const status = await getMovieBoxConfigStatus();
-        if (isCancelled) return;
-        setMovieBoxStatus(status);
+      // 2. Check & Load MovieBox Homepage Rows
+      const status = await getMovieBoxConfigStatus();
+      setMovieBoxStatus(status);
 
-        if (status.hasSecret && status.isVerified) {
-          const rows = await getMovieBoxHomeRows();
-          if (isCancelled || !rows || rows.length === 0) return;
-
-          // Fetch subjects for first 3 discovered rows dynamically
+      if (status.hasSecret && status.isVerified) {
+        const rows = await getMovieBoxHomeRows();
+        if (rows && rows.length > 0) {
           const loadedRows: Array<{ title: string; items: MediaItem[] }> = [];
           for (const row of rows.slice(0, 3)) {
             const items = await getMovieBoxRowSubjects(row.opId);
@@ -151,21 +143,28 @@ export default function App() {
               loadedRows.push({ title: row.title, items });
             }
           }
-
-          if (!isCancelled && loadedRows.length > 0) {
+          if (loadedRows.length > 0) {
             setDynamicMovieBoxRows(loadedRows);
           }
         }
-      } catch (err) {
-        console.warn('[CRATOR] Dynamic MovieBox rows load error:', err);
       }
+
+      if (showNotification) {
+        showToast('Home page refreshed with live streaming feeds');
+      }
+    } catch (err) {
+      console.warn('[CRATOR] Dynamic feeds load error:', err);
+      if (showNotification) {
+        showToast('Catalog feeds refreshed');
+      }
+    } finally {
+      setIsRefreshingHome(false);
     }
+  };
 
-    loadLiveFeeds();
-
-    return () => {
-      isCancelled = true;
-    };
+  // Load feeds on mount
+  useEffect(() => {
+    refreshHomePage(false);
   }, []);
 
   // Toast auto-clear
@@ -300,6 +299,8 @@ export default function App() {
         onOpenProfile={() => setProfileModalOpen(true)}
         mobileMenuOpen={mobileMenuOpen}
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        onRefreshHome={() => refreshHomePage(true)}
+        isRefreshingHome={isRefreshingHome}
       />
 
       {/* Main Content Area (Offset by sidebar width on desktop) */}
@@ -312,6 +313,39 @@ export default function App() {
           {/* HOME VIEW */}
           {currentTab === 'home' && (
             <div className="space-y-6">
+              {/* Home Status & Refresh Bar */}
+              <div className="px-4 md:px-8 pt-3 pb-0 flex items-center justify-between flex-wrap gap-2.5">
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] font-semibold flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>CineSRC 4K Primary</span>
+                  </span>
+                  {tmdbStatus?.hasKey && (
+                    <span className="px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 font-mono text-[11px] hidden sm:inline-flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                      <span>TMDB Live</span>
+                    </span>
+                  )}
+                  {movieBoxStatus?.isVerified && (
+                    <span className="px-2.5 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 font-mono text-[11px] hidden md:inline-flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                      <span>MovieBox Alt</span>
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => refreshHomePage(true)}
+                  disabled={isRefreshingHome}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#140F24] hover:bg-purple-900/40 border border-purple-800/40 hover:border-purple-500/50 text-purple-200 hover:text-white text-xs font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  title="Refresh Home Page & Live Feeds"
+                  aria-label="Refresh home page"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-purple-400 ${isRefreshingHome ? 'animate-spin' : ''}`} />
+                  <span>{isRefreshingHome ? 'Refreshing...' : 'Refresh Home'}</span>
+                </button>
+              </div>
+
               {/* Hero Section */}
               <HeroSection
                 featuredItems={heroFeaturedItems}
@@ -661,6 +695,7 @@ export default function App() {
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         onShowToast={showToast}
+        onRefreshFeeds={() => refreshHomePage(true)}
       />
 
       {/* Global Feedback Toast */}

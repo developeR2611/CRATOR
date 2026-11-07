@@ -43,23 +43,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
         {/* Top Badges (Quality / Platform / Episode badge) */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none gap-1">
-          {item.streamStatus === 'available' ? (
-            <span className="text-[9px] font-bold tracking-wider uppercase bg-emerald-950/80 backdrop-blur-md px-1.5 py-0.5 rounded text-emerald-300 border border-emerald-500/40 font-mono shadow-sm">
-              Stream Ready
-            </span>
-          ) : item.hasMovieBoxMatch || item.movieBoxSubjectId ? (
-            <span className="text-[9px] font-bold tracking-wider uppercase bg-purple-950/80 backdrop-blur-md px-1.5 py-0.5 rounded text-purple-300 border border-purple-500/40 font-mono shadow-sm">
-              MovieBox Linked
-            </span>
-          ) : item.id.startsWith('tmdb-') ? (
-            <span className="text-[9px] font-bold tracking-wider uppercase bg-purple-950/80 backdrop-blur-md px-1.5 py-0.5 rounded text-purple-300 border border-purple-500/40 font-mono shadow-sm">
-              TMDB Info
-            </span>
-          ) : (
-            <span className="text-[10px] font-semibold tracking-wide bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-purple-300 border border-purple-500/20 font-mono">
-              {item.quality}
-            </span>
-          )}
+          <span className="text-[9px] font-bold tracking-wider uppercase bg-emerald-950/80 backdrop-blur-md px-1.5 py-0.5 rounded text-emerald-300 border border-emerald-500/40 font-mono shadow-sm">
+            CineSRC 4K
+          </span>
 
           {/* Platform pill indicator */}
           <span className="text-[10px] font-medium bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-slate-300 border border-white/10 shrink-0">

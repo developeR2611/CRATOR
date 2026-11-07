@@ -19,12 +19,14 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onShowToast: (message: string) => void;
+  onRefreshFeeds?: () => void;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
   onShowToast,
+  onRefreshFeeds,
 }) => {
   const [profileName, setProfileName] = useState<string>('Alex Rivera');
   const [selectedQuality, setSelectedQuality] = useState<string>('4K Ultra HD (2160p)');
@@ -71,6 +73,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setApiStatus(updated);
     setWorkerSecretInput('');
     setAdminTokenInput('');
+    if (res.verified) {
+      onRefreshFeeds?.();
+    }
   };
 
   const handleSaveTmdbKey = async () => {
@@ -87,10 +92,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     const updated = await getTmdbStatus();
     setTmdbStatus(updated);
     setTmdbKeyInput('');
+    if (res.verified) {
+      onRefreshFeeds?.();
+    }
   };
 
   const handleSave = () => {
     onShowToast('Streaming preferences updated successfully');
+    onRefreshFeeds?.();
     onClose();
   };
 
