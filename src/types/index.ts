@@ -64,12 +64,10 @@ export interface MediaItem {
   isPopularSeries?: boolean;
   isEditorPick?: boolean;
   featuredInHero?: boolean;
-  // Provider Identifiers & Stream Linkage (Dual-Provider Architecture)
+  // Provider Identifiers & Stream Linkage (VidRift TMDB Integration)
   tmdbId?: number | string;
-  movieBoxSubjectId?: string;
+  anilistId?: number | string;
   localCratorId?: string;
-  hasMovieBoxMatch?: boolean;
-  matchConfidence?: 'verified' | 'unmatched' | 'ambiguous';
   fallbackPosterUrl?: string;
   fallbackBackdropUrl?: string;
   streamStatus?: 'available' | 'unavailable' | 'unverified';

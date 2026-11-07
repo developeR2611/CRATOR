@@ -1,5 +1,5 @@
-import React from 'react';
-import { Play, X, Clock } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ContinueWatchingItem, MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 
@@ -8,6 +8,7 @@ interface ContinueWatchingProps {
   mediaCatalog: MediaItem[];
   onPlay: (item: MediaItem) => void;
   onRemove: (mediaId: string) => void;
+  onClearHistory?: () => void;
 }
 
 export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
@@ -15,94 +16,135 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
   mediaCatalog,
   onPlay,
   onRemove,
+  onClearHistory,
 }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   if (!items.length) return null;
 
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const offset = direction === 'left' ? -320 : 320;
+      scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <section className="w-full py-4 space-y-3.5">
-      <div className="flex items-center justify-between px-4 md:px-8">
+    <section className="rail continue-rail">
+      {/* 7Movies Rail Heading */}
+      <div className="rail-heading">
         <div>
-          <h2 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight flex items-center gap-2">
-            <span>Continue Watching</span>
-          </h2>
-          <p className="text-xs text-purple-200/60 mt-0.5">
-            Pick up right where you left off
-          </p>
+          <p className="eyebrow">PICK UP WHERE YOU LEFT OFF</p>
+          <h2>Continue watching</h2>
         </div>
+
+        {onClearHistory && (
+          <button 
+            type="button"
+            onClick={onClearHistory}
+            className="rail-action"
+            title="Clear all watch history"
+          >
+            Clear history
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-8">
-        {items.map((item) => {
-          const media = mediaCatalog.find((m) => m.id === item.mediaId);
-          if (!media) return null;
+      {/* Rail Row Wrap with Arrows */}
+      <div className="rail-row-wrap">
+        <button
+          type="button"
+          onClick={() => scroll('left')}
+          className="rail-arrow rail-arrow-left"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-          return (
-            <div
-              key={item.mediaId}
-              className="group relative bg-[#130D21] rounded-xl overflow-hidden border border-purple-900/30 hover:border-purple-500/50 shadow-md transition-all duration-300"
-            >
-              {/* Thumbnail Container (16:9) */}
-              <div 
-                className="relative aspect-video w-full overflow-hidden cursor-pointer"
+        <div ref={scrollRef} className="card-row">
+          {items.map((item) => {
+            const media = mediaCatalog.find((m) => m.id === item.mediaId);
+            if (!media) return null;
+
+            return (
+              <div
+                key={item.mediaId}
+                className="media-card is-wide group"
                 onClick={() => onPlay(media)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Continue watching ${media.title}`}
               >
-                <ImageWithFallback
-                  src={media.backdropUrl || media.posterUrl}
-                  alt={media.title}
-                  fallbackTitle={media.title}
-                  containerClassName="w-full h-full"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-600 to-fuchsia-600 text-white flex items-center justify-center shadow-lg shadow-purple-900/60 transform group-hover:scale-110 active:scale-95 transition-transform">
-                    <Play className="w-4 h-4 fill-white ml-0.5" />
-                  </div>
-                </div>
-
-                {/* Progress bar overlay at bottom of image */}
-                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-purple-950/80">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-r-full"
-                    style={{ width: `${item.progressPercent}%` }}
+                {/* 16:9 Landscape Poster */}
+                <div className="poster is-wide">
+                  <ImageWithFallback
+                    src={media.backdropUrl || media.posterUrl}
+                    alt={media.title}
+                    fallbackTitle={media.title}
+                    containerClassName="w-full h-full"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                </div>
 
-                {/* Dismiss button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove(item.mediaId);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/90 text-purple-200/80 hover:text-white transition-colors cursor-pointer"
-                  title="Remove from history"
-                  aria-label="Remove title from continue watching"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                  {/* Dark gradient overlay behind text */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
-              {/* Title & Timing Info */}
-              <div className="p-3">
-                <h4 className="font-semibold text-sm text-white truncate group-hover:text-purple-300 transition-colors">
-                  {media.title}
-                </h4>
+                  {/* Play icon hover overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-between text-xs text-purple-200/60 mt-1">
-                  <span>
-                    {item.seasonNumber && item.episodeNumber
-                      ? `S${item.seasonNumber} · E${item.episodeNumber}`
-                      : media.quality}
-                  </span>
-                  <div className="flex items-center gap-1 font-mono">
-                    <Clock className="w-3 h-3 text-purple-400" />
-                    <span>{item.currentTime} left</span>
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(item.mediaId);
+                    }}
+                    className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/60 hover:bg-black/90 text-white/70 hover:text-white transition-colors cursor-pointer z-10"
+                    title="Remove from history"
+                    aria-label={`Remove ${media.title} from history`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Content Overlay at bottom of image */}
+                  <div className="absolute bottom-2.5 left-3 right-3 z-10 pointer-events-none">
+                    <h3 className="font-display font-semibold text-sm text-white truncate drop-shadow-md">
+                      {media.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-[11px] text-[#beb9bc] mt-0.5 font-mono">
+                      <span>
+                        {item.seasonNumber && item.episodeNumber
+                          ? `S${item.seasonNumber}:E${item.episodeNumber}`
+                          : (item.currentTime ? `${item.currentTime} left` : `${item.progressPercent}%`)}
+                      </span>
+                      <span>{item.progressPercent}%</span>
+                    </div>
+                  </div>
+
+                  {/* Thin bottom progress indicator bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 pointer-events-none">
+                    <div
+                      className="h-full bg-white transition-all duration-300"
+                      style={{ width: `${item.progressPercent}%` }}
+                    />
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => scroll('right')}
+          className="rail-arrow rail-arrow-right"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </section>
   );

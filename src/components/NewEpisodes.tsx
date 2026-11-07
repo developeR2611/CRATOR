@@ -1,5 +1,5 @@
-import React from 'react';
-import { Play, Sparkles, Clock } from 'lucide-react';
+import React, { useRef } from 'react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { NEW_EPISODES, NewEpisodeItem } from '../data/mockData';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
@@ -15,103 +15,110 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
   onPlay,
   onOpenDetails,
 }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const offset = direction === 'left' ? -320 : 320;
+      scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <section className="w-full py-4 space-y-3.5">
-      <div className="flex items-center justify-between px-4 md:px-8">
+    <section className="rail new-episodes-rail">
+      {/* 7Movies Rail Heading */}
+      <div className="rail-heading">
         <div>
-          <h2 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight flex items-center gap-2">
-            <span>New Episodes</span>
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-fuchsia-400 bg-fuchsia-950/50 px-2 py-0.5 rounded-md border border-fuchsia-800/40">
-              <Sparkles className="w-3 h-3" />
-              Simulcast
-            </span>
-          </h2>
-          <p className="text-xs text-purple-200/60 mt-0.5">
-            Freshly dropped episodes available in 4K HDR
-          </p>
+          <p className="eyebrow">FROM SHOWS YOU WATCH OR SAVED</p>
+          <h2>New episodes</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-8">
-        {NEW_EPISODES.map((ep: NewEpisodeItem) => {
-          const media = mediaCatalog.find((m) => m.id === ep.mediaId);
+      {/* Rail Row Wrap with Arrows */}
+      <div className="rail-row-wrap">
+        <button
+          type="button"
+          onClick={() => scroll('left')}
+          className="rail-arrow rail-arrow-left"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-          return (
-            <div
-              key={ep.id}
-              onClick={() => {
-                if (media) onOpenDetails(media);
-              }}
-              className="group relative bg-[#120D1D] rounded-xl overflow-hidden border border-purple-900/30 hover:border-purple-500/50 shadow-md transition-all duration-300 cursor-pointer flex flex-col"
-            >
-              {/* 16:9 Thumbnail Container */}
-              <div className="relative aspect-video w-full overflow-hidden">
-                <ImageWithFallback
-                  src={ep.thumbnail}
-                  alt={ep.episodeTitle}
-                  fallbackTitle={ep.showTitle}
-                  containerClassName="w-full h-full"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+        <div ref={scrollRef} className="card-row">
+          {NEW_EPISODES.map((ep: NewEpisodeItem) => {
+            const media = mediaCatalog.find((m) => m.id === ep.mediaId);
 
-                {/* Scrim */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 group-hover:from-black/90 transition-colors" />
+            return (
+              <div
+                key={ep.id}
+                onClick={() => {
+                  if (media) onOpenDetails(media);
+                }}
+                className="media-card is-wide group"
+                role="button"
+                tabIndex={0}
+                aria-label={`${ep.showTitle} - ${ep.episodeTitle}`}
+              >
+                {/* 16:9 Landscape Poster */}
+                <div className="poster is-wide">
+                  <ImageWithFallback
+                    src={ep.thumbnail}
+                    alt={ep.episodeTitle}
+                    fallbackTitle={ep.showTitle}
+                    containerClassName="w-full h-full"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
 
-                {/* Top Badge: Update status & Platform */}
-                <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-fuchsia-600/90 text-white shadow-sm">
-                    {ep.statusBadge}
+                  {/* Gradient Scrim */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 pointer-events-none" />
+
+                  {/* Red Badge top right */}
+                  <span className="card-badge">
+                    {ep.statusBadge === 'Finale' ? 'Finale' : 'New episode'}
                   </span>
-                  <span className="text-[10px] font-medium bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-purple-300 border border-purple-500/20">
-                    {ep.platform}
-                  </span>
+
+                  {/* Play hover button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (media) onPlay(media);
+                      }}
+                      className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform pointer-events-auto cursor-pointer"
+                      title="Play Episode"
+                    >
+                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                    </button>
+                  </div>
+
+                  {/* Bottom details on poster */}
+                  <div className="absolute bottom-2.5 left-3 right-3 z-10 pointer-events-none">
+                    <span className="text-[11px] font-mono text-white/90">
+                      {ep.seasonEpisode} · {ep.runtime}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Play button overlay */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (media) onPlay(media);
-                  }}
-                  className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white flex items-center justify-center shadow-lg shadow-purple-950/80 transform group-hover:scale-110 active:scale-95 transition-transform"
-                  title="Play Episode"
-                  aria-label="Play episode"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white ml-0.5" />
-                </button>
-
-                {/* Bottom Left: Season / Episode Indicator */}
-                <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 text-xs font-semibold text-white">
-                  <span className="text-purple-400 font-mono">{ep.seasonEpisode}</span>
-                  <span className="text-white/40">·</span>
-                  <span className="text-purple-200/80">{ep.runtime}</span>
-                </div>
-              </div>
-
-              {/* Episode Info */}
-              <div className="p-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-bold text-sm text-white group-hover:text-purple-300 transition-colors truncate">
-                    {ep.showTitle}
-                  </h4>
-                  <p className="text-xs text-purple-200/70 truncate mt-0.5">
-                    {ep.episodeTitle}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-purple-300/50 mt-2.5 pt-2 border-t border-purple-900/30">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>Added {ep.updatedTime}</span>
-                  </span>
-                  <span className="text-purple-400 group-hover:translate-x-0.5 transition-transform">
-                    Watch →
-                  </span>
+                {/* Minimal Card Copy below image */}
+                <div className="card-copy">
+                  <h3>{ep.showTitle}</h3>
+                  <p>{ep.episodeTitle}</p>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => scroll('right')}
+          className="rail-arrow rail-arrow-right"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </section>
   );

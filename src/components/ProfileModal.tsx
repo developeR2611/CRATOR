@@ -3,16 +3,14 @@ import {
   X, 
   User, 
   Check, 
-  Key, 
-  Sliders, 
   Volume2, 
   Monitor, 
   CheckCircle2, 
   AlertCircle, 
   Loader2,
-  Film
+  Film,
+  Sparkles
 } from 'lucide-react';
-import { getMovieBoxConfigStatus, updateMovieBoxServerSecret, MovieBoxStatus } from '../services/moviebox';
 import { getTmdbStatus, updateTmdbServerKey, TmdbStatus } from '../services/tmdb';
 
 interface ProfileModalProps {
@@ -28,17 +26,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onShowToast,
   onRefreshFeeds,
 }) => {
-  const [profileName, setProfileName] = useState<string>('Alex Rivera');
+  const [profileName] = useState<string>('CRATOR Streamer');
   const [selectedQuality, setSelectedQuality] = useState<string>('4K Ultra HD (2160p)');
   const [selectedAudio, setSelectedAudio] = useState<string>('Dolby Atmos / Spatial');
-  const [selectedSubtitleLang, setSelectedSubtitleLang] = useState<string>('English');
-  const [hardwareAcceleration, setHardwareAcceleration] = useState<boolean>(true);
-
-  // MovieBox API Secret management
-  const [workerSecretInput, setWorkerSecretInput] = useState<string>('');
-  const [adminTokenInput, setAdminTokenInput] = useState<string>('');
-  const [isVerifyingWorker, setIsVerifyingWorker] = useState<boolean>(false);
-  const [apiStatus, setApiStatus] = useState<MovieBoxStatus | null>(null);
 
   // TMDB API Key management
   const [tmdbKeyInput, setTmdbKeyInput] = useState<string>('');
@@ -47,36 +37,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      getMovieBoxConfigStatus().then(setApiStatus);
       getTmdbStatus().then(setTmdbStatus);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleSaveWorkerSecret = async () => {
-    if (!workerSecretInput.trim()) {
-      onShowToast('Please enter your MovieBox Worker Secret');
-      return;
-    }
-    if (!adminTokenInput.trim()) {
-      onShowToast('Enter the CRATOR admin token configured on the server');
-      return;
-    }
-
-    setIsVerifyingWorker(true);
-    const res = await updateMovieBoxServerSecret(workerSecretInput.trim(), adminTokenInput.trim());
-    setIsVerifyingWorker(false);
-
-    onShowToast(res.message);
-    const updated = await getMovieBoxConfigStatus();
-    setApiStatus(updated);
-    setWorkerSecretInput('');
-    setAdminTokenInput('');
-    if (res.verified) {
-      onRefreshFeeds?.();
-    }
-  };
 
   const handleSaveTmdbKey = async () => {
     if (!tmdbKeyInput.trim()) {
@@ -98,60 +63,75 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   };
 
   const handleSave = () => {
-    onShowToast('Streaming preferences updated successfully');
+    onShowToast('Streaming preferences updated');
     onRefreshFeeds?.();
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
       <div 
-        className="relative w-full max-w-lg bg-[#0E0A1A] rounded-2xl overflow-hidden border border-purple-900/40 shadow-2xl p-6 md:p-8 space-y-6"
+        className="relative w-full max-w-lg bg-[#0e0d11] rounded-2xl overflow-hidden border border-white/12 shadow-2xl p-6 md:p-8 space-y-6 text-[#f3f0ea]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-black text-purple-200/80 hover:text-white border border-purple-900/40 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white hover:text-black text-[#beb9bc] border border-white/10 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Profile Lockup */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-fuchsia-600 p-[2px] shadow-lg shadow-purple-900/50">
-            <div className="w-full h-full bg-[#120D1D] rounded-[14px] flex items-center justify-center">
-              <User className="w-7 h-7 text-purple-300" />
-            </div>
+          <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-lg font-display font-bold">
+            <User className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display font-black text-xl text-white tracking-tight">
+              <h2 className="font-display font-bold text-xl text-white tracking-tight">
                 {profileName}
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-600/30 text-purple-300 border border-purple-500/40">
-                VIP 4K
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/10 text-white border border-white/15">
+                VidRift 4K
               </span>
             </div>
-            <p className="text-xs text-purple-300/60 mt-0.5">
-              Active Member · Dolby Vision Master Pass
+            <p className="text-xs text-[#8e8a91] mt-0.5 font-mono">
+              Playback Configuration & Streaming Status
             </p>
           </div>
         </div>
 
-        {/* TMDB API Key Integration Card */}
-        <div className="space-y-3 pt-2 border-t border-purple-950/50">
+        {/* Streaming Provider Status */}
+        <div className="p-3.5 rounded-xl bg-[#141316] border border-white/10 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-300/60 uppercase tracking-wider flex items-center gap-1.5">
-              <Film className="w-3.5 h-3.5 text-purple-400" />
-              TMDB API Key (The Movie Database)
+            <span className="eyebrow flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              Streaming Engine
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-950/60 text-emerald-400 border-emerald-800/40 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>VidRift Embedded (Active)</span>
+            </span>
+          </div>
+          <p className="text-xs text-[#8e8a91]">
+            Powered by VidRift's high-speed adaptive HLS streaming engine with multi-server failover and subtitles. No key required.
+          </p>
+        </div>
+
+        {/* TMDB API Key Integration Card */}
+        <div className="space-y-3 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between">
+            <span className="eyebrow flex items-center gap-1.5">
+              <Film className="w-3.5 h-3.5 text-white" />
+              TMDB API Key (Title Discovery & Metadata)
             </span>
 
             {tmdbStatus && (
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                 tmdbStatus.isVerified 
                   ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/40'
-                  : (tmdbStatus.hasKey ? 'bg-sky-950/60 text-sky-300 border-sky-800/40' : 'bg-purple-950/60 text-purple-300 border-purple-800/40')
+                  : (tmdbStatus.hasKey ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-[#8e8a91] border-white/10')
               }`}>
                 {tmdbStatus.isVerified ? (
                   <>
@@ -168,8 +148,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             )}
           </div>
 
-          <div className="p-3 rounded-xl bg-[#150F24] border border-purple-900/30 space-y-2">
-            <label className="text-[11px] text-purple-200/80 font-medium">
+          <div className="p-3.5 rounded-xl bg-[#141316] border border-white/10 space-y-2">
+            <label className="text-[11px] text-[#beb9bc] font-medium">
               TMDB API Key or Read Access Token (v3 or v4)
             </label>
             <div className="flex items-center gap-2">
@@ -177,14 +157,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 type="password"
                 value={tmdbKeyInput}
                 onChange={(e) => setTmdbKeyInput(e.target.value)}
-                placeholder={tmdbStatus?.hasKey ? '••••••••••••••••' : 'Paste TMDB API Key or Token...'}
-                className="flex-1 bg-[#1A122B] border border-purple-900/40 focus:border-purple-500 rounded-xl px-3 py-1.5 text-xs text-white placeholder-purple-400/40 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
+                placeholder={tmdbStatus?.hasKey ? '••••••••••••••••' : 'Paste TMDB API Key...'}
+                className="flex-1 bg-[#1a191d] border border-white/10 focus:border-white/40 rounded-xl px-3 py-2 text-xs text-white placeholder-[#77737a] focus:outline-none font-mono"
               />
               <button
                 type="button"
                 onClick={handleSaveTmdbKey}
                 disabled={isVerifyingTmdb || !tmdbKeyInput.trim()}
-                className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                className="primary-btn h-8 px-3 rounded-lg text-xs font-semibold shrink-0 disabled:opacity-40"
               >
                 {isVerifyingTmdb ? (
                   <>
@@ -192,111 +172,31 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <span>Verifying...</span>
                   </>
                 ) : (
-                  <span>Save & Test</span>
+                  <span>Save</span>
                 )}
               </button>
             </div>
-            <p className="text-[10px] text-purple-300/50">
-              Powers live 4K posters, trending feeds, cast avatars, and detailed plot metadata.
+            <p className="text-[10px] text-[#8e8a91]">
+              Powers live posters, trending carousels, and cast photos.
             </p>
           </div>
         </div>
 
-        {/* MovieBox API Worker Key Integration */}
-        <div className="space-y-3 pt-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-300/60 uppercase tracking-wider flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-purple-400" />
-              MovieBox Cloudflare Worker
-            </span>
-
-            {apiStatus && (
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                apiStatus.isVerified 
-                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/40'
-                  : (apiStatus.hasSecret ? 'bg-sky-950/60 text-sky-300 border-sky-800/40' : 'bg-amber-950/60 text-amber-300 border-amber-800/40')
-              }`}>
-                {apiStatus.isVerified ? (
-                  <>
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    <span>Connected & Verified</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-3 h-3" />
-                    <span>{apiStatus.hasSecret ? 'Secret Configured' : 'Secret Required'}</span>
-                  </>
-                )}
-              </span>
-            )}
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#150F24] border border-purple-900/30 space-y-2.5">
-            <div className="flex items-center justify-between text-xs text-purple-300/70">
-              <span>Endpoint:</span>
-              <span className="font-mono text-purple-200 truncate max-w-[240px]">
-                {apiStatus?.apiUrl || 'https://spun-moviebox.ravi-crator.workers.dev'}
-              </span>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <label className="text-[11px] text-purple-200/80 font-medium">CRATOR Admin Token</label>
-              <input
-                type="password"
-                value={adminTokenInput}
-                onChange={(e) => setAdminTokenInput(e.target.value)}
-                placeholder="Server CRATOR_ADMIN_TOKEN"
-                autoComplete="off"
-                className="w-full bg-[#1A122B] border border-purple-900/40 focus:border-purple-500 rounded-xl px-3 py-1.5 text-xs text-white placeholder-purple-400/40 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
-              />
-            </div>
-            <div className="space-y-1.5 pt-1">
-              <label className="text-[11px] text-purple-200/80 font-medium">
-                Update Worker Secret (X-Worker-Secret header)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="password"
-                  value={workerSecretInput}
-                  onChange={(e) => setWorkerSecretInput(e.target.value)}
-                  placeholder={apiStatus?.hasSecret ? '••••••••••••••••' : 'Enter MOVIEBOX_SECRET...'}
-                  className="flex-1 bg-[#1A122B] border border-purple-900/40 focus:border-purple-500 rounded-xl px-3 py-1.5 text-xs text-white placeholder-purple-400/40 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveWorkerSecret}
-                  disabled={isVerifyingWorker || !workerSecretInput.trim() || !adminTokenInput.trim()}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                >
-                  {isVerifyingWorker ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Verifying...</span>
-                    </>
-                  ) : (
-                    <span>Save & Verify</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Streaming & Playback Preferences */}
-        <div className="space-y-4 pt-2 border-t border-purple-950/50">
-          <span className="text-xs font-bold text-purple-300/50 uppercase tracking-wider block">
+        <div className="space-y-3 pt-2 border-t border-white/10">
+          <span className="eyebrow block">
             Playback Preferences
           </span>
 
           <div className="space-y-1.5">
-            <label className="text-xs text-purple-200/80 flex items-center gap-1.5">
-              <Monitor className="w-3.5 h-3.5 text-purple-400" />
+            <label className="text-xs text-[#beb9bc] flex items-center gap-1.5">
+              <Monitor className="w-3.5 h-3.5 text-white" />
               <span>Default Video Quality</span>
             </label>
             <select
               value={selectedQuality}
               onChange={(e) => setSelectedQuality(e.target.value)}
-              className="w-full bg-[#150F24] border border-purple-900/40 rounded-xl px-3 py-2 text-xs text-purple-100 font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full bg-[#141316] border border-white/10 rounded-xl px-3 py-2 text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
             >
               <option value="4K Ultra HD (2160p)">4K Ultra HD (2160p) - Maximum Bitrate</option>
               <option value="1080p FHD">1080p FHD - Balanced</option>
@@ -306,14 +206,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs text-purple-200/80 flex items-center gap-1.5">
-              <Volume2 className="w-3.5 h-3.5 text-purple-400" />
+            <label className="text-xs text-[#beb9bc] flex items-center gap-1.5">
+              <Volume2 className="w-3.5 h-3.5 text-white" />
               <span>Audio Format</span>
             </label>
             <select
               value={selectedAudio}
               onChange={(e) => setSelectedAudio(e.target.value)}
-              className="w-full bg-[#150F24] border border-purple-900/40 rounded-xl px-3 py-2 text-xs text-purple-100 font-medium focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full bg-[#141316] border border-white/10 rounded-xl px-3 py-2 text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
             >
               <option value="Dolby Atmos / Spatial">Dolby Atmos / Spatial Audio 7.1</option>
               <option value="5.1 Surround">Dolby Digital 5.1 Surround</option>
@@ -323,16 +223,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-2 flex items-center justify-end gap-3 border-t border-purple-950/50">
+        <div className="pt-2 flex items-center justify-end gap-3 border-t border-white/10">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-purple-300 hover:text-white transition-colors cursor-pointer"
+            className="secondary-btn h-9 px-4 rounded-xl text-xs"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md shadow-purple-900/50 transition-colors cursor-pointer"
+            className="primary-btn h-9 px-5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Save Settings</span>

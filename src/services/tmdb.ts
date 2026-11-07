@@ -133,9 +133,7 @@ export function mapTmdbToMediaItem(raw: any, defaultType?: MediaType): MediaItem
   return {
     id: `tmdb-${type}-${raw.id}`,
     tmdbId: raw.id,
-    hasMovieBoxMatch: false,
-    matchConfidence: 'unmatched',
-    streamStatus: 'unverified',
+    streamStatus: 'available',
     title,
     originalTitle: originalTitle !== title ? originalTitle : undefined,
     type,

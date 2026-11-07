@@ -77,9 +77,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isFresh: true,
     cast: [
-      { name: 'Sam Worthington', character: 'Jake Sully', avatar: '' },
-      { name: 'Zoe Saldana', character: 'Neytiri', avatar: '' },
-      { name: 'Sigourney Weaver', character: 'Kiri', avatar: '' }
+      { name: 'Sam Worthington', character: 'Jake Sully', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Zoe Saldana', character: 'Neytiri', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' },
+      { name: 'Sigourney Weaver', character: 'Kiri', avatar: 'https://image.tmdb.org/t/p/w185/bc7a8A7F48z54Ue7wXzQc8hY7f.jpg' }
     ]
   },
   {
@@ -105,8 +105,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: false,
     cast: [
-      { name: 'Sam Worthington', character: 'Jake Sully', avatar: '' },
-      { name: 'Zoe Saldana', character: 'Neytiri', avatar: '' }
+      { name: 'Sam Worthington', character: 'Jake Sully', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Zoe Saldana', character: 'Neytiri', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -135,10 +135,10 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isFresh: true,
     featuredInHero: true,
     cast: [
-      { name: 'Timothée Chalamet', character: 'Paul Atreides', avatar: '' },
-      { name: 'Zendaya', character: 'Chani', avatar: '' },
-      { name: 'Rebecca Ferguson', character: 'Lady Jessica', avatar: '' },
-      { name: 'Javier Bardem', character: 'Stilgar', avatar: '' },
+      { name: 'Timothée Chalamet', character: 'Paul Atreides', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Zendaya', character: 'Chani', avatar: 'https://image.tmdb.org/t/p/w185/tylFktdn0S1fH9a6P1b3o9b996h.jpg' },
+      { name: 'Rebecca Ferguson', character: 'Lady Jessica', avatar: 'https://image.tmdb.org/t/p/w185/lJloTOheuQSirSLXq31nFZBsBKB.jpg' },
+      { name: 'Javier Bardem', character: 'Stilgar', avatar: 'https://image.tmdb.org/t/p/w185/h9f9n08Y36eF77Z61d7e2t1.jpg' },
     ]
   },
   {
@@ -166,10 +166,10 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isPopularSeries: true,
     featuredInHero: true,
     cast: [
-      { name: 'Adam Scott', character: 'Mark Scout', avatar: '' },
-      { name: 'Patricia Arquette', character: 'Harmony Cobel', avatar: '' },
-      { name: 'John Turturro', character: 'Irving Bailiff', avatar: '' },
-      { name: 'Christopher Walken', character: 'Burt Goodman', avatar: '' }
+      { name: 'Adam Scott', character: 'Mark Scout', avatar: 'https://image.tmdb.org/t/p/w185/4c8bSfZz7bH2x8xL8l2YjR5vFzQ.jpg' },
+      { name: 'Patricia Arquette', character: 'Harmony Cobel', avatar: 'https://image.tmdb.org/t/p/w185/v3fV7V3W6G5N0A0A5b5VvB7Y7f.jpg' },
+      { name: 'John Turturro', character: 'Irving Bailiff', avatar: 'https://image.tmdb.org/t/p/w185/snGNYL9b9M9i5hL4ZzG7f9H9h4L.jpg' },
+      { name: 'Christopher Walken', character: 'Burt Goodman', avatar: 'https://image.tmdb.org/t/p/w185/AWTJb0lS5i1C09iA7bM5iHl7k2b.jpg' }
     ],
     seasons: [
       {
@@ -219,9 +219,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isPopularSeries: true,
     featuredInHero: true,
     cast: [
-      { name: 'KENN', character: 'David Martinez', avatar: '' },
-      { name: 'Aoi Yuuki', character: 'Lucy Kushinada', avatar: '' },
-      { name: 'Tomoyo Kurosawa', character: 'Rebecca', avatar: '' }
+      { name: 'KENN', character: 'David Martinez', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Aoi Yuuki', character: 'Lucy Kushinada', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' },
+      { name: 'Tomoyo Kurosawa', character: 'Rebecca', avatar: 'https://image.tmdb.org/t/p/w185/tylFktdn0S1fH9a6P1b3o9b996h.jpg' }
     ],
     seasons: [
       {
@@ -261,9 +261,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isPopularSeries: true,
     featuredInHero: true,
     cast: [
-      { name: 'Hiroyuki Sanada', character: 'Lord Yoshii Toranaga', avatar: '' },
-      { name: 'Cosmo Jarvis', character: 'John Blackthorne', avatar: '' },
-      { name: 'Anna Sawai', character: 'Toda Mariko', avatar: '' }
+      { name: 'Hiroyuki Sanada', character: 'Lord Yoshii Toranaga', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Cosmo Jarvis', character: 'John Blackthorne', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Anna Sawai', character: 'Toda Mariko', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ],
     seasons: [
       {
@@ -302,9 +302,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isFresh: false,
     featuredInHero: false,
     cast: [
-      { name: 'Matthew McConaughey', character: 'Joseph Cooper', avatar: '' },
-      { name: 'Anne Hathaway', character: 'Dr. Amelia Brand', avatar: '' },
-      { name: 'Jessica Chastain', character: 'Murphy Cooper', avatar: '' }
+      { name: 'Matthew McConaughey', character: 'Joseph Cooper', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Anne Hathaway', character: 'Dr. Amelia Brand', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' },
+      { name: 'Jessica Chastain', character: 'Murphy Cooper', avatar: 'https://image.tmdb.org/t/p/w185/lJloTOheuQSirSLXq31nFZBsBKB.jpg' }
     ]
   },
   {
@@ -332,8 +332,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isPopularSeries: true,
     featuredInHero: true,
     cast: [
-      { name: 'Hailee Steinfeld', character: 'Vi', avatar: '' },
-      { name: 'Ella Purnell', character: 'Jinx', avatar: '' }
+      { name: 'Hailee Steinfeld', character: 'Vi', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' },
+      { name: 'Ella Purnell', character: 'Jinx', avatar: 'https://image.tmdb.org/t/p/w185/tylFktdn0S1fH9a6P1b3o9b996h.jpg' }
     ],
     seasons: [
       {
@@ -378,9 +378,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Cillian Murphy', character: 'J. Robert Oppenheimer', avatar: '' },
-      { name: 'Emily Blunt', character: 'Katherine Oppenheimer', avatar: '' },
-      { name: 'Robert Downey Jr.', character: 'Lewis Strauss', avatar: '' }
+      { name: 'Cillian Murphy', character: 'J. Robert Oppenheimer', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Emily Blunt', character: 'Katherine Oppenheimer', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' },
+      { name: 'Robert Downey Jr.', character: 'Lewis Strauss', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' }
     ]
   },
   {
@@ -407,8 +407,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Atsumi Tanezaki', character: 'Frieren', avatar: '' },
-      { name: 'Kana Ichinose', character: 'Fern', avatar: '' }
+      { name: 'Atsumi Tanezaki', character: 'Frieren', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Kana Ichinose', character: 'Fern', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ],
     seasons: [
       {
@@ -445,8 +445,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Robert Pattinson', character: 'Bruce Wayne / Batman', avatar: '' },
-      { name: 'Zoë Kravitz', character: 'Selina Kyle / Catwoman', avatar: '' }
+      { name: 'Robert Pattinson', character: 'Bruce Wayne / Batman', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Zoë Kravitz', character: 'Selina Kyle / Catwoman', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -473,8 +473,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Pedro Pascal', character: 'Joel Miller', avatar: '' },
-      { name: 'Bella Ramsey', character: 'Ellie Williams', avatar: '' }
+      { name: 'Pedro Pascal', character: 'Joel Miller', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Bella Ramsey', character: 'Ellie Williams', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ],
     seasons: [
       {
@@ -510,9 +510,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: false,
     cast: [
-      { name: 'Ryan Gosling', character: 'Officer K / Joe', avatar: '' },
-      { name: 'Harrison Ford', character: 'Rick Deckard', avatar: '' },
-      { name: 'Ana de Armas', character: 'Joi', avatar: '' }
+      { name: 'Ryan Gosling', character: 'Officer K / Joe', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Harrison Ford', character: 'Rick Deckard', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Ana de Armas', character: 'Joi', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -538,9 +538,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Rebecca Ferguson', character: 'Juliette Nichols', avatar: '' },
-      { name: 'Common', character: 'Robert Sims', avatar: '' },
-      { name: 'Tim Robbins', character: 'Bernard Holland', avatar: '' }
+      { name: 'Rebecca Ferguson', character: 'Juliette Nichols', avatar: 'https://image.tmdb.org/t/p/w185/lJloTOheuQSirSLXq31nFZBsBKB.jpg' },
+      { name: 'Common', character: 'Robert Sims', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Tim Robbins', character: 'Bernard Holland', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' }
     ]
   },
   {
@@ -566,8 +566,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isFresh: true,
     cast: [
-      { name: 'Shameik Moore', character: 'Miles Morales', avatar: '' },
-      { name: 'Hailee Steinfeld', character: 'Gwen Stacy', avatar: '' }
+      { name: 'Shameik Moore', character: 'Miles Morales', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Hailee Steinfeld', character: 'Gwen Stacy', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -593,8 +593,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Junya Enoki', character: 'Yuji Itadori', avatar: '' },
-      { name: 'Yuichi Nakamura', character: 'Satoru Gojo', avatar: '' }
+      { name: 'Junya Enoki', character: 'Yuji Itadori', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Yuichi Nakamura', character: 'Satoru Gojo', avatar: 'https://image.tmdb.org/t/p/w185/tylFktdn0S1fH9a6P1b3o9b996h.jpg' }
     ]
   },
   {
@@ -620,9 +620,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Keanu Reeves', character: 'John Wick', avatar: '' },
-      { name: 'Donnie Yen', character: 'Caine', avatar: '' },
-      { name: 'Bill Skarsgård', character: 'Marquis de Gramont', avatar: '' }
+      { name: 'Keanu Reeves', character: 'John Wick', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Donnie Yen', character: 'Caine', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Bill Skarsgård', character: 'Marquis de Gramont', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -648,9 +648,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Emma D’Arcy', character: 'Queen Rhaenyra Targaryen', avatar: '' },
-      { name: 'Matt Smith', character: 'Prince Daemon Targaryen', avatar: '' },
-      { name: 'Olivia Cooke', character: 'Queen Alicent Hightower', avatar: '' }
+      { name: 'Emma D’Arcy', character: 'Queen Rhaenyra Targaryen', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Matt Smith', character: 'Prince Daemon Targaryen', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Olivia Cooke', character: 'Queen Alicent Hightower', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -676,8 +676,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Natsuki Hanae', character: 'Tanjiro Kamado', avatar: '' },
-      { name: 'Akari Kito', character: 'Nezuko Kamado', avatar: '' }
+      { name: 'Natsuki Hanae', character: 'Tanjiro Kamado', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Akari Kito', character: 'Nezuko Kamado', avatar: 'https://image.tmdb.org/t/p/w185/tylFktdn0S1fH9a6P1b3o9b996h.jpg' }
     ]
   },
   {
@@ -703,9 +703,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: false,
     cast: [
-      { name: 'Leonardo DiCaprio', character: 'Dom Cobb', avatar: '' },
-      { name: 'Joseph Gordon-Levitt', character: 'Arthur', avatar: '' },
-      { name: 'Elliot Page', character: 'Ariadne', avatar: '' }
+      { name: 'Leonardo DiCaprio', character: 'Dom Cobb', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Joseph Gordon-Levitt', character: 'Arthur', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Elliot Page', character: 'Ariadne', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -731,9 +731,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: true,
     isPopularSeries: true,
     cast: [
-      { name: 'Millie Bobby Brown', character: 'Eleven', avatar: '' },
-      { name: 'David Harbour', character: 'Jim Hopper', avatar: '' },
-      { name: 'Winona Ryder', character: 'Joyce Byers', avatar: '' }
+      { name: 'Millie Bobby Brown', character: 'Eleven', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'David Harbour', character: 'Jim Hopper', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Winona Ryder', character: 'Joyce Byers', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -760,8 +760,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Song Kang-ho', character: 'Kim Ki-taek', avatar: '' },
-      { name: 'Choi Woo-shik', character: 'Kim Ki-woo', avatar: '' }
+      { name: 'Song Kang-ho', character: 'Kim Ki-taek', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Choi Woo-shik', character: 'Kim Ki-woo', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -787,9 +787,9 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Emma Stone', character: 'Bella Baxter', avatar: '' },
-      { name: 'Mark Ruffalo', character: 'Duncan Wedderburn', avatar: '' },
-      { name: 'Willem Dafoe', character: 'Dr. Godwin Baxter', avatar: '' }
+      { name: 'Emma Stone', character: 'Bella Baxter', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Mark Ruffalo', character: 'Duncan Wedderburn', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' },
+      { name: 'Willem Dafoe', character: 'Dr. Godwin Baxter', avatar: 'https://image.tmdb.org/t/p/w185/vYBAPHq58A2Z6i5sBqM67L7b7Gz.jpg' }
     ]
   },
   {
@@ -816,8 +816,8 @@ export const MEDIA_CATALOG: MediaItem[] = [
     isTrending: false,
     isFresh: true,
     cast: [
-      { name: 'Sandra Hüller', character: 'Sandra Voyter', avatar: '' },
-      { name: 'Swann Arlaud', character: 'Vincent Renzi', avatar: '' }
+      { name: 'Sandra Hüller', character: 'Sandra Voyter', avatar: 'https://image.tmdb.org/t/p/w185/blKKsXuh7nDPt5UvfTnxkeWJG7b.jpg' },
+      { name: 'Swann Arlaud', character: 'Vincent Renzi', avatar: 'https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg' }
     ]
   }
 ];

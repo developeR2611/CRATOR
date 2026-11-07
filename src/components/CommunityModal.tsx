@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Send, Users, Bell, MessageSquare, Sparkles, Check, ExternalLink } from 'lucide-react';
+import { X, Send, Copy, ExternalLink } from 'lucide-react';
 
 interface CommunityModalProps {
   isOpen: boolean;
@@ -15,120 +15,109 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
   if (!isOpen) return null;
 
   const handleJoin = (channelName: string) => {
-    onShowToast(`Joined ${channelName}! Welcome to the CRATOR community.`);
+    onShowToast(`Redirecting to ${channelName}...`);
   };
 
   const handleCopy = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText('https://t.me/crator_official');
-      onShowToast('Telegram invite link copied to clipboard!');
+      onShowToast('Invite link copied to clipboard');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
       <div 
-        className="relative w-full max-w-lg bg-[#0F0B1C] rounded-2xl overflow-hidden border border-purple-900/40 shadow-2xl p-6 md:p-8 space-y-6"
+        className="relative w-full max-w-lg bg-[#0e0d11] rounded-2xl overflow-hidden border border-white/12 shadow-2xl p-6 md:p-8 space-y-6 text-[#f3f0ea]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-black text-purple-200/80 hover:text-white border border-purple-900/40 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white hover:text-black text-[#beb9bc] border border-white/10 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Icon & Title */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-sky-600/30">
-            <Send className="w-6 h-6 ml-0.5" />
+          <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-lg font-display font-bold">
+            <Send className="w-5 h-5 ml-0.5" />
           </div>
           <div>
-            <h2 className="font-display font-black text-xl md:text-2xl text-white tracking-tight">
+            <span className="eyebrow block">COMMUNITY & UPDATES</span>
+            <h2 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight">
               CRATOR Community
             </h2>
-            <p className="text-xs text-purple-300/70">
-              Official Telegram Channels & Discussion Hubs
+            <p className="text-xs text-[#8e8a91]">
+              Join the official discussion & streaming announcement channels
             </p>
           </div>
         </div>
 
         {/* Stats Strip */}
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#160F28] border border-purple-900/30 text-center">
+        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#141316] border border-white/10 text-center">
           <div>
-            <span className="text-xs text-purple-300/60 block">Global Members</span>
-            <span className="font-display font-bold text-lg text-white">48,450+</span>
+            <span className="text-xs text-[#8e8a91] block">Active Members</span>
+            <span className="font-display font-bold text-base text-white">48,200+</span>
           </div>
           <div>
-            <span className="text-xs text-purple-300/60 block">Online Now</span>
-            <span className="font-display font-bold text-lg text-emerald-400">2,840</span>
+            <span className="text-xs text-[#8e8a91] block">Daily Releases</span>
+            <span className="font-display font-bold text-base text-white">100+ 4K HDR</span>
           </div>
         </div>
 
         {/* Channels List */}
         <div className="space-y-2.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-300/60 block">
-            Select Channel
-          </span>
-
           {[
             {
-              id: 'releases',
-              title: 'CRATOR 4K Releases & Alerts',
-              desc: 'Instant notifications when new 4K episodes and films drop',
-              icon: <Bell className="w-4 h-4 text-purple-400" />,
+              name: 'CRATOR Official Announcements',
+              desc: 'Direct daily 4K drops, VidRift updates, and new series alert',
+              tag: 'Main Channel',
             },
             {
-              id: 'lounge',
-              title: 'Cinephile Chat & Requests',
-              desc: 'Discuss plot twists, request remasters, and share reviews',
-              icon: <MessageSquare className="w-4 h-4 text-sky-400" />,
+              name: 'CRATOR Lounge & Requests',
+              desc: 'Chat with other cinephiles, report broken links & request titles',
+              tag: 'Discussion Hub',
             },
-            {
-              id: 'anime',
-              title: 'CRATOR Anime & Simulcast',
-              desc: 'Weekly episode drops, sub/dub announcements & schedules',
-              icon: <Sparkles className="w-4 h-4 text-fuchsia-400" />,
-            },
-          ].map((channel) => (
+          ].map((ch) => (
             <div
-              key={channel.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-[#140E22] border border-purple-900/30 hover:border-purple-500/40 transition-colors"
+              key={ch.name}
+              className="flex items-center justify-between p-3.5 rounded-xl bg-[#141316] border border-white/10 hover:border-white/20 transition-all"
             >
-              <div className="flex items-center gap-3 overflow-hidden pr-2">
-                <div className="p-2 rounded-lg bg-purple-950/60 shrink-0">
-                  {channel.icon}
+              <div className="space-y-0.5 pr-2">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-white">{ch.name}</h4>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-[#beb9bc]">
+                    {ch.tag}
+                  </span>
                 </div>
-                <div className="text-left overflow-hidden">
-                  <h4 className="text-xs font-semibold text-white truncate">{channel.title}</h4>
-                  <p className="text-[11px] text-purple-200/60 truncate">{channel.desc}</p>
-                </div>
+                <p className="text-[11px] text-[#8e8a91]">{ch.desc}</p>
               </div>
 
               <button
-                onClick={() => handleJoin(channel.title)}
-                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer"
+                onClick={() => handleJoin(ch.name)}
+                className="primary-btn h-8 px-3 rounded-lg text-xs shrink-0"
               >
-                Join
+                <span>Join</span>
+                <ExternalLink className="w-3 h-3" />
               </button>
             </div>
           ))}
         </div>
 
         {/* Copy Invite Link */}
-        <div className="pt-2 flex items-center justify-between border-t border-purple-900/40">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[#141316] border border-white/10">
+          <span className="text-xs font-mono text-[#8e8a91] truncate mr-2">
+            https://t.me/crator_official
+          </span>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 text-xs text-purple-300 hover:text-white transition-colors cursor-pointer"
+            className="secondary-btn h-8 px-3 rounded-lg text-xs shrink-0 flex items-center gap-1.5"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Copy Telegram Link</span>
+            <Copy className="w-3 h-3" />
+            <span>Copy</span>
           </button>
-
-          <span className="text-[11px] text-purple-400/50">
-            t.me/crator_official
-          </span>
         </div>
       </div>
     </div>
