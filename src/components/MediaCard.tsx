@@ -1,7 +1,8 @@
 import React from 'react';
-import { Play } from 'lucide-react';
+import { Play, Info } from 'lucide-react';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { availabilityService } from '../services/availability';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -20,6 +21,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   rankingNumber,
   isWide = false,
 }) => {
+  const availability = availabilityService.checkAvailability(item);
+  const isPlayable = availability.isAvailable;
   const isFresh = item.isFresh || item.releaseYear >= 2024;
   const isTopTen = typeof rankingNumber === 'number';
   const displayType = item.type === 'movie' ? 'Movie' : (item.type === 'anime' ? 'Anime' : 'TV');
@@ -51,27 +54,50 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           </span>
         )}
 
-        {/* Top-Right Badge (e.g. New episode / New release) */}
-        {isFresh && !isTopTen && (
-          <span className="card-badge">
-            {item.type === 'series' ? 'New episode' : 'New release'}
-          </span>
+        {/* Top-Right Badge: Availability / Fresh Status */}
+        {!isTopTen && (
+          <>
+            {!isPlayable ? (
+              <span className="card-badge bg-[#1f1e24] text-[#beb9bc] border border-white/20">
+                {availability.confidence === 'unreleased' ? 'Coming Soon' : 'Unavailable'}
+              </span>
+            ) : isFresh ? (
+              <span className="card-badge bg-[#e50914] text-white">
+                {item.type === 'series' ? 'New episode' : 'New release'}
+              </span>
+            ) : null}
+          </>
         )}
 
         {/* Hover Quick Action Overlay */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPlay(item);
-            }}
-            className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
-            title={`Play ${item.title}`}
-            aria-label={`Play ${item.title}`}
-          >
-            <Play className="w-4 h-4 fill-current ml-0.5" />
-          </button>
+          {isPlayable ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlay(item);
+              }}
+              className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              title={`Play ${item.title} (VidRift 4K)`}
+              aria-label={`Play ${item.title}`}
+            >
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenDetails(item);
+              }}
+              className="w-10 h-10 rounded-full bg-black/80 border border-white/30 text-white flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              title={`${availability.reason} - Click for details`}
+              aria-label={`Details for ${item.title}`}
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -93,3 +119,4 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     </div>
   );
 };
+

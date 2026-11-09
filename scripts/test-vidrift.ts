@@ -116,4 +116,23 @@ const tvRes = resolveVidRiftPlayback(testTvItem, 1, 3);
 assert(!tvRes.error, 'TV show resolved without error');
 assert(tvRes.embedUrl.includes('/embed/tv/95557/1/3'), 'Generated TV embed URL with S1:E3');
 
-console.log('\n🎉 ALL VIDRIFT TESTS PASSED SUCCESSFULLY!');
+console.log('\n--- Testing VidRift Availability Service ---');
+import { availabilityService } from '../src/services/availability';
+
+const availableMovie = availabilityService.checkAvailability(testMovieItem);
+assert(availableMovie.isAvailable === true, 'Released movie is available');
+
+const unreleasedMovie: MediaItem = {
+  ...testMovieItem,
+  id: 'future-avatar-5',
+  tmdbId: 888888,
+  releaseYear: 2031,
+};
+const unreleasedCheck = availabilityService.checkAvailability(unreleasedMovie);
+assert(unreleasedCheck.isAvailable === false, 'Unreleased 2031 movie is flagged as not available');
+assert(unreleasedCheck.confidence === 'unreleased', 'Unreleased confidence marked correctly');
+
+const filtered = availabilityService.filterPlayableTitles([testMovieItem, unreleasedMovie]);
+assert(filtered.length === 1 && filtered[0].id === 'dune-2', 'filterPlayableTitles keeps only playable titles');
+
+console.log('\n🎉 ALL VIDRIFT & AVAILABILITY TESTS PASSED SUCCESSFULLY!');

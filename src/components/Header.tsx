@@ -9,7 +9,7 @@ import {
   Settings 
 } from 'lucide-react';
 
-export type NavTab = 'home' | 'movies' | 'tv' | 'discover' | 'mylist';
+export type NavTab = 'home' | 'movies' | 'tv' | 'discover' | 'mylist' | 'search';
 
 interface HeaderProps {
   activeTab: NavTab;
@@ -19,6 +19,7 @@ interface HeaderProps {
   onOpenDiscord: () => void;
   adsEnabled?: boolean;
   onToggleAds?: () => void;
+  isHidden?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,9 +30,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDiscord,
   adsEnabled = true,
   onToggleAds,
+  isHidden = false,
 }) => {
   return (
-    <header className="topbar">
+    <header className={`topbar ${isHidden ? 'is-hidden' : ''}`} aria-hidden={isHidden}>
       {/* Desktop Brand (Left) */}
       <span 
         className="desktop-nav-brand" 
@@ -132,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenSearch}
-            className="nav-action"
+            className={`nav-action ${activeTab === 'search' ? 'bg-white text-black' : ''}`}
             title="Search movies & TV shows"
             aria-label="Search"
           >

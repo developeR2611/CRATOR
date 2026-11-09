@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Info } from 'lucide-react';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { getSynchronousKnownLogo, getTmdbLogo } from '../services/tmdb';
 
 interface HeroSectionProps {
   featuredItems: MediaItem[];
@@ -16,8 +17,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [dynamicLogos, setDynamicLogos] = useState<Record<string, string>>({});
 
   const currentItem = featuredItems[currentIndex] || featuredItems[0];
+
+  // Fetch logo if not synchronously known
+  useEffect(() => {
+    if (!currentItem) return;
+    const synchronousLogo = currentItem.logoUrl || getSynchronousKnownLogo(currentItem);
+    if (!synchronousLogo && !dynamicLogos[currentItem.id]) {
+      const isTv = currentItem.type === 'series' || currentItem.type === 'anime';
+      const lookupId = currentItem.tmdbId || currentItem.id;
+      getTmdbLogo(isTv ? 'tv' : 'movie', lookupId).then((url) => {
+        if (url) {
+          setDynamicLogos((prev) => ({ ...prev, [currentItem.id]: url }));
+        }
+      }).catch(() => {});
+    }
+  }, [currentItem?.id]);
 
   // Auto advance every 8 seconds when not hovered
   useEffect(() => {
@@ -71,9 +88,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       {/* Hero Content (Lower Left) */}
       <div key={`content-${currentItem.id}`} className="hero-content">
         {/* Title */}
-        <h1 className="hero-title">
-          {currentItem.title}
-        </h1>
+        {/* Title or Official TMDB Graphic Logo */}
+        {(() => {
+          const heroLogo = currentItem.logoUrl || dynamicLogos[currentItem.id] || getSynchronousKnownLogo(currentItem);
+          return heroLogo ? (
+            <div className="mb-3 max-w-xs sm:max-w-sm md:max-w-md">
+              <img
+                src={heroLogo}
+                alt={currentItem.title}
+                className="max-h-16 sm:max-h-20 md:max-h-24 w-auto object-contain object-left drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] select-none"
+              />
+            </div>
+          ) : (
+            <h1 className="hero-title">
+              {currentItem.title}
+            </h1>
+          );
+        })()}
 
         {/* Clean Metadata Row (No pills) */}
         <div className="hero-meta">

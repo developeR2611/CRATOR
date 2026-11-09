@@ -64,19 +64,28 @@
   top: 20px;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 45;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+  will-change: transform, opacity;
+}
+
+.topbar.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-120%);
 }
 
 @media (max-width: 800px) {
   .topbar {
     top: auto;
     bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .topbar.is-hidden {
+    transform: translateY(120%);
   }
 }
 
@@ -154,9 +163,22 @@
 }
 
 @media (max-width: 640px) {
+  .nav-pill {
+    height: 42px;
+    padding: 3px;
+    gap: 2px;
+  }
   .nav-tab {
-    padding: 0 10px;
+    padding: 0 9px;
+    height: 34px;
     font-size: 12px;
+  }
+  .nav-tab .tab-label {
+    display: none;
+  }
+  .nav-action {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -726,9 +748,56 @@
   gap: 5px;
 }
 
-.card-rating-star {
-  color: #ffd477;
-  font-size: 11px;
+/* Discovery & Search View Grid */
+.dz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px 16px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .dz-grid {
+    grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    gap: 16px 10px;
+  }
+}
+
+.dz-grid .media-card {
+  flex: none;
+  width: 100%;
+}
+
+.dz-type {
+  display: inline-flex;
+  align-items: center;
+  background: #141316;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.dz-type-btn {
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #beb9bc;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dz-type-btn:hover {
+  color: #ffffff;
+}
+
+.dz-type-btn.active {
+  background: #ffffff;
+  color: #000000;
+  font-weight: 700;
 }
 
 /* Site Footer */

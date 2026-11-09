@@ -11,6 +11,7 @@ import {
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
 import { searchTmdb, getTmdbStatus, TmdbStatus } from '../services/tmdb';
+import { availabilityService } from '../services/availability';
 
 interface SearchViewProps {
   mediaCatalog: MediaItem[];
@@ -199,8 +200,14 @@ export const SearchView: React.FC<SearchViewProps> = ({
     }
   };
 
-  // Filter currently displayed results by Type and Genre
+  const [onlyPlayable, setOnlyPlayable] = useState<boolean>(true);
+
+  // Filter currently displayed results by Availability, Type, and Genre
   const filteredResults = results.filter((item) => {
+    if (onlyPlayable) {
+      const avail = availabilityService.checkAvailability(item);
+      if (!avail.isAvailable) return false;
+    }
     if (selectedType !== 'all') {
       const isTv = item.type === 'series' || item.type === 'anime' || (item.type as any) === 'tv';
       if (selectedType === 'movie' && isTv) return false;
@@ -366,7 +373,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             <span className="text-xs text-[#8e8a91] font-mono">Top cinema selections</span>
           </div>
           <div className="dz-grid">
-            {mediaCatalog.slice(0, 12).map((item) => (
+            {availabilityService.filterPlayableTitles(mediaCatalog).slice(0, 12).map((item) => (
               <MediaCard
                 key={item.id}
                 item={item}

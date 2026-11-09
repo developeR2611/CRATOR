@@ -88,6 +88,43 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// ==================== VIDRIFT AVAILABILITY REGISTRY ====================
+const availabilityCache = new Map<string, { available: boolean; reason: string; timestamp: number }>();
+
+app.get('/api/vidrift/availability', (req: Request, res: Response) => {
+  const tmdbId = req.query.tmdbId ? String(req.query.tmdbId) : '';
+  const type = req.query.type ? String(req.query.type) : 'movie';
+
+  if (!tmdbId) {
+    return res.status(400).json({ error: 'tmdbId query parameter required' });
+  }
+
+  const key = `${type}:${tmdbId}`;
+  const record = availabilityCache.get(key);
+
+  if (record) {
+    return res.json({ found: true, ...record });
+  }
+
+  res.json({ found: false, tmdbId, type, checkedAt: Date.now() });
+});
+
+app.post('/api/vidrift/availability', (req: Request, res: Response) => {
+  const { tmdbId, type = 'movie', available = true, reason = 'client_verified' } = req.body || {};
+  if (!tmdbId) {
+    return res.status(400).json({ error: 'tmdbId required in body' });
+  }
+
+  const key = `${type}:${tmdbId}`;
+  availabilityCache.set(key, {
+    available: Boolean(available),
+    reason: String(reason),
+    timestamp: Date.now(),
+  });
+
+  res.json({ success: true, key, available });
+});
+
 // ==================== TMDB API ROUTES ====================
 
 // 1. Status & Configuration
@@ -180,21 +217,33 @@ app.get('/api/tmdb/search', async (req: Request, res: Response) => {
   res.json(result.data);
 });
 
-// 4. Movie Details
+// 4. Movie Details (including credits, recommendations, and official logos)
 app.get('/api/tmdb/movie/:id', async (req: Request, res: Response) => {
   const result = await callTmdbApi(`/movie/${req.params.id}`, {
-    append_to_response: 'credits,videos,recommendations',
+    append_to_response: 'credits,videos,recommendations,images',
+    include_image_language: 'en,null',
     language: 'en-US',
   });
   if (!result.ok) return res.status(result.status || 500).json(result);
   res.json(result.data);
 });
 
-// 5. TV Show Details
+// 5. TV Show Details (including credits, recommendations, and official logos)
 app.get('/api/tmdb/tv/:id', async (req: Request, res: Response) => {
   const result = await callTmdbApi(`/tv/${req.params.id}`, {
-    append_to_response: 'credits,videos,recommendations',
+    append_to_response: 'credits,videos,recommendations,images',
+    include_image_language: 'en,null',
     language: 'en-US',
+  });
+  if (!result.ok) return res.status(result.status || 500).json(result);
+  res.json(result.data);
+});
+
+// 5b. Dedicated Movie/TV Images & Logos endpoint
+app.get('/api/tmdb/:type/:id/images', async (req: Request, res: Response) => {
+  const type = req.params.type === 'tv' || req.params.type === 'series' ? 'tv' : 'movie';
+  const result = await callTmdbApi(`/${type}/${req.params.id}/images`, {
+    include_image_language: 'en,null',
   });
   if (!result.ok) return res.status(result.status || 500).json(result);
   res.json(result.data);

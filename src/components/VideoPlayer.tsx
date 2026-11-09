@@ -94,7 +94,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       brandColor: 'f3f0ea',
       showTitle: true,
       exit: true,
-      autoplay: false,
+      autoplay: true,
     });
 
     if (result.error || !result.embedUrl) {
@@ -112,6 +112,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     loadVidRift();
   }, [loadVidRift]);
+
+  // Auto-dismiss loading indicator after short delay to allow immediate interaction with player
+  useEffect(() => {
+    if (isLoading && embedUrl) {
+      const timer = setTimeout(() => setIsLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, embedUrl]);
 
   // --------------------------------------------------------------------------
   // VidRift postMessage Event Listener
@@ -298,8 +306,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             src={embedUrl}
             title={titleToDisplay}
             className="w-full h-full border-0 bg-black"
-            allow="autoplay; fullscreen"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
+            referrerPolicy="origin-when-cross-origin"
             onLoad={() => setIsLoading(false)}
           />
         )}
@@ -404,27 +413,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         </div>
 
-        {/* Top Right: Fullscreen & Details */}
+        {/* Top Right: Details Button */}
         <div className="flex items-center gap-2.5">
           {onViewDetails && (
             <button
               onClick={() => onViewDetails(item)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-white hover:text-black text-[#beb9bc] text-xs font-semibold border border-white/10 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-white hover:text-black text-[#beb9bc] text-xs font-semibold border border-white/10 transition-all cursor-pointer"
               title="View Details"
             >
               <Info className="w-3.5 h-3.5" />
               <span>Details</span>
             </button>
           )}
-
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 rounded-full bg-black/60 hover:bg-white hover:text-black text-[#f3f0ea] border border-white/10 transition-colors cursor-pointer"
-            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            title="Toggle Fullscreen (F)"
-          >
-            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-          </button>
         </div>
       </div>
     </div>

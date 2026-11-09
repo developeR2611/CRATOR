@@ -283,12 +283,13 @@ export default function App() {
       {/* 7movies Floating Header */}
       <Header
         activeTab={activeTab}
+        isHidden={Boolean(selectedMedia || playingMedia)}
         onSelectTab={(tab) => {
           setActiveTab(tab);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenSearch={() => {
-          setActiveTab('search' as NavTab);
+          setActiveTab('search');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenSettings={() => setProfileModalOpen(true)}

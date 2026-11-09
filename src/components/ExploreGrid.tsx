@@ -8,6 +8,7 @@ import {
   PLATFORMS_LIST 
 } from '../data/mockData';
 import { MediaCard } from './MediaCard';
+import { availabilityService } from '../services/availability';
 
 interface ExploreGridProps {
   mediaCatalog: MediaItem[];
@@ -39,6 +40,10 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
   // Filter & sort logic
   const filteredItems = useMemo(() => {
     return mediaCatalog.filter((item) => {
+      // Verified Availability on VidRift
+      const avail = availabilityService.checkAvailability(item);
+      if (!avail.isAvailable) return false;
+
       // Type
       if (selectedType !== 'all') {
         if (selectedType === 'movie' && item.type !== 'movie') return false;
@@ -222,8 +227,9 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
 
         {/* 7Movies Secondary Meta Bar */}
         <div className="dz-bar flex items-center justify-between border-t border-white/10 pt-4 mt-5 text-xs text-[#77737a] font-mono uppercase tracking-wider">
-          <span className="dz-count text-[#beb9bc]">
-            {filteredItems.length} titles available
+          <span className="dz-count text-[#beb9bc] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71]" />
+            <span>{filteredItems.length} verified titles available on VidRift</span>
           </span>
 
           <span className="dz-bar-actions">
@@ -240,7 +246,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
       </div>
 
       {/* 7Movies Results Grid */}
-      <div className="dz-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-5 mt-6">
+      <div className="dz-grid mt-6">
         {filteredItems.map((item) => (
           <MediaCard
             key={item.id}

@@ -42,6 +42,7 @@ export interface MediaItem {
   synopsis: string;
   posterUrl: string;
   backdropUrl: string;
+  logoUrl?: string;
   rating: number; // e.g. 8.8
   voteCount: string; // e.g. "245K"
   releaseYear: number;
