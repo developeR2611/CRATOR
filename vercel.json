@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "/api/handler?__path=:path*"
+    },
+    {
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
