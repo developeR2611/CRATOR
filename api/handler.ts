@@ -11,7 +11,8 @@ export default function handler(req: Request, res: Response) {
 
   incomingUrl.searchParams.delete('__path');
   const search = incomingUrl.searchParams.toString();
-  req.url = `/api/${apiPath.replace(/^\\/+/, '')}${search ? `?${search}` : ''}`;
+  const cleanPath = apiPath.startsWith('/') ? apiPath.slice(1) : apiPath;
+  req.url = `/api/${cleanPath}${search ? `?${search}` : ''}`;
 
   return app(req, res);
 }
