@@ -6,6 +6,9 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    // NEXT_PUBLIC_* values are public browser config, matching the Vercel project vars.
+    // Do not add server-only credentials with this prefix.
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),
