@@ -3,7 +3,6 @@ import type { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // Load environment variables from .env
@@ -22,7 +21,6 @@ app.use(express.json());
 const getTmdbKey = () => {
   return (
     process.env.TMDB_API_KEY ||
-    process.env.VITE_TMDB_API_KEY ||
     process.env.TMDB_READ_TOKEN ||
     ''
   ).trim();
@@ -150,42 +148,6 @@ app.get('/api/tmdb/status', async (_req: Request, res: Response) => {
   });
 });
 
-app.post('/api/tmdb/set-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body || {};
-  if (!apiKey || typeof apiKey !== 'string') {
-    return res.status(400).json({ error: 'API Key must be a non-empty string' });
-  }
-
-  const cleanKey = apiKey.trim();
-  process.env.TMDB_API_KEY = cleanKey;
-
-  // Persist to .env
-  try {
-    const envPath = path.resolve(__dirname, '.env');
-    let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-    if (envContent.includes('TMDB_API_KEY=')) {
-      envContent = envContent.replace(/TMDB_API_KEY=.*/g, `TMDB_API_KEY="${cleanKey}"`);
-    } else {
-      envContent += `\nTMDB_API_KEY="${cleanKey}"`;
-    }
-    fs.writeFileSync(envPath, envContent, 'utf8');
-  } catch (e) {
-    console.warn('Could not write TMDB key to .env:', e);
-  }
-
-  // Test verify key
-  const testRes = await callTmdbApi('/trending/all/day', {});
-
-  res.json({
-    success: true,
-    verified: testRes.ok,
-    status: testRes.status,
-    message: testRes.ok 
-      ? 'TMDB API key verified successfully! High-res artwork and metadata activated.'
-      : 'Key saved, but TMDB returned an error. Please verify your API key.',
-  });
-});
-
 // 2. Trending on TMDB
 app.get('/api/tmdb/trending', async (_req: Request, res: Response) => {
   const result = await callTmdbApi('/trending/all/week', { language: 'en-US' });
@@ -287,6 +249,8 @@ app.get('/api/tmdb/:type/:id/recommendations', async (req: Request, res: Respons
 
 // ==================== VITE SPA SETUP ====================
 async function startServer() {
+  if (process.env.VERCEL === '1') return;
+
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (!isProduction) {
@@ -309,7 +273,11 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start CRATOR server:', err);
-  process.exit(1);
-});
+export default app;
+
+if (process.env.VERCEL !== '1') {
+  startServer().catch((err) => {
+    console.error('Failed to start CRATOR server:', err);
+    process.exit(1);
+  });
+}
