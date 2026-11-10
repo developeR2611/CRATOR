@@ -92,11 +92,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {(() => {
           const heroLogo = currentItem.logoUrl || dynamicLogos[currentItem.id] || getSynchronousKnownLogo(currentItem);
           return heroLogo ? (
-            <div className="mb-3 max-w-xs sm:max-w-sm md:max-w-md">
+            <div className="mb-2.5 max-w-xs sm:max-w-sm md:max-w-md">
               <img
                 src={heroLogo}
                 alt={currentItem.title}
-                className="max-h-16 sm:max-h-20 md:max-h-24 w-auto object-contain object-left drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] select-none"
+                className="max-h-14 sm:max-h-16 md:max-h-20 w-auto object-contain object-left drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] select-none"
               />
             </div>
           ) : (
@@ -113,11 +113,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <span>{contentType}</span>
           <span>{country}</span>
         </div>
-
-        {/* Short Synopsis */}
-        <p className="hero-description">
-          {currentItem.synopsis}
-        </p>
 
         {/* Dual Actions: Play & More info */}
         <div className="hero-buttons">

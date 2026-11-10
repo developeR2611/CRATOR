@@ -252,7 +252,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </button>
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop */}
-      <div className="relative w-full min-h-[84vh] md:min-h-[88vh] flex flex-col justify-end overflow-hidden">
+      <div className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden">
         {/* Full-Bleed Backdrop Image */}
         <div className="absolute inset-0 z-0">
           <ImageWithFallback
@@ -261,17 +261,17 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             alt={activeItem.title}
             fallbackTitle={activeItem.title}
             containerClassName="w-full h-full"
-            className="w-full h-full object-cover object-center filter brightness-[0.85]"
+            className="w-full h-full object-cover object-[center_15%] sm:object-[center_12%] filter brightness-[0.92]"
           />
 
-          {/* Gradients matching screenshots: deep left vignette and smooth bottom fade to pure black */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-transparent w-full md:w-3/4" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-transparent h-full" />
-          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
+          {/* Gradients matching screenshots: left vignette and bottom fade leaving upper 65% bright */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent w-full md:w-3/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 via-35% to-transparent h-full pointer-events-none" />
+          <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/75 to-transparent pointer-events-none" />
         </div>
 
-        {/* Hero Content Block (Left-Aligned, exactly matching screenshots) */}
-        <div className="relative z-10 w-full max-w-5xl px-6 sm:px-12 md:px-16 pt-32 pb-10 space-y-4">
+        {/* Hero Content Block positioned lower to keep poster/characters visible */}
+        <div className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-6 sm:pb-8 pt-44 sm:pt-60 md:pt-72 space-y-2.5 sm:space-y-3">
           {/* Kicker Row: — FILM · 2026 · [ R ] · 2H 53M or — SERIES · 2026 · TV-14 · 1 SEASON */}
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
             <span className="text-white/50 text-base leading-none select-none">—</span>
@@ -287,13 +287,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </div>
 
           {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) OR STYLED TITLE */}
-          <div className="py-1">
+          <div className="py-0.5">
             {activeItem.logoUrl ? (
-              <div className="py-2 max-w-sm sm:max-w-md md:max-w-xl">
+              <div className="py-1 max-w-xs sm:max-w-sm md:max-w-md">
                 <img
                   src={activeItem.logoUrl}
                   alt={activeItem.title}
-                  className="max-h-24 sm:max-h-32 md:max-h-36 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] select-none"
+                  className="max-h-16 sm:max-h-20 md:max-h-24 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] select-none"
                   onError={() => {
                     // Graceful fallback to text if logo image is unavailable
                     setActiveItem((prev) => prev ? { ...prev, logoUrl: undefined } : null);
@@ -311,12 +311,12 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </div>
 
           {/* Synopsis paragraph */}
-          <p className="text-sm sm:text-base text-[#d1ced2] leading-relaxed max-w-2xl line-clamp-3">
+          <p className="text-xs sm:text-sm text-[#d1ced2] leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
             {activeItem.synopsis}
           </p>
 
           {/* Directed by / Created by line */}
-          <div className="flex items-center gap-2 pt-1 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 pt-0.5 text-xs">
             <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
               {isTv ? 'CREATED BY' : 'DIRECTED BY'}
             </span>
@@ -326,7 +326,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </div>
 
           {/* Action Buttons Row */}
-          <div className="flex items-center gap-3 pt-3 flex-wrap">
+          <div className="flex items-center gap-2.5 pt-2 flex-wrap">
             {/* White Primary Play / Resume Button */}
             <button
               onClick={() => handlePlayCurrent()}
@@ -365,7 +365,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </div>
 
           {/* Promo Banner Card: Always find 7Movies / 7domains.fans */}
-          <div className="pt-2">
+          <div className="pt-1">
             <div 
               onClick={handleShare}
               className="relative rounded-2xl bg-[#141418]/85 hover:bg-[#1a1a20] border border-white/15 hover:border-white/30 p-3.5 max-w-md flex items-center justify-between backdrop-blur-md transition-all cursor-pointer shadow-xl group overflow-hidden"
