@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import app from '../server';
+import app from '../src/server/app';
 
 export default function handler(req: Request, res: Response) {
   const incomingUrl = new URL(req.url || '/', 'http://vercel.internal');
