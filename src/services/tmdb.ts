@@ -389,25 +389,7 @@ export async function getTmdbStatus(): Promise<TmdbStatus> {
   }
 }
 
-// 2. Set/Update TMDB key on server
-export async function updateTmdbServerKey(apiKey: string): Promise<{ success: boolean; verified: boolean; message: string }> {
-  try {
-    const res = await fetch('/api/tmdb/set-key', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey }),
-    });
-    return await res.json();
-  } catch (err: any) {
-    return {
-      success: false,
-      verified: false,
-      message: err.message || 'Failed to update TMDB key',
-    };
-  }
-}
-
-// 3. Search TMDB
+// 2. Search TMDB
 export async function searchTmdb(query: string, page: number = 1): Promise<{ items: MediaItem[]; total: number; hasMore: boolean }> {
   try {
     const res = await fetch(`/api/tmdb/search?query=${encodeURIComponent(query)}&page=${page}`);
