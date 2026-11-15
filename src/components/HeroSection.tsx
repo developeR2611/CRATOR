@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Info } from 'lucide-react';
+import { Play, Info, Calendar } from 'lucide-react';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 import { getSynchronousKnownLogo, getTmdbLogo } from '../services/tmdb';
+import { isMediaUnreleased, formatReleaseDate } from '../services/availability';
 
 interface HeroSectionProps {
   featuredItems: MediaItem[];
@@ -50,6 +51,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const contentType = currentItem.type === 'movie' ? 'Movie' : 'TV';
   const rankNumber = currentItem.topTenRank || (currentIndex + 1);
   const country = currentItem.industry === 'Anime' ? 'Japan' : (currentItem.language === 'Korean' ? 'South Korea' : 'United States');
+  const isUnreleased = isMediaUnreleased(currentItem);
+  const releaseLabel = formatReleaseDate(currentItem.releaseDate, currentItem.releaseYear);
 
   return (
     <section 
@@ -87,7 +90,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* Hero Content (Lower Left) */}
       <div key={`content-${currentItem.id}`} className="hero-content">
-        {/* Title */}
         {/* Title or Official TMDB Graphic Logo */}
         {(() => {
           const heroLogo = currentItem.logoUrl || dynamicLogos[currentItem.id] || getSynchronousKnownLogo(currentItem);
@@ -108,23 +110,30 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Clean Metadata Row (No pills) */}
         <div className="hero-meta">
-          <span className="rating">★ {currentItem.rating.toFixed(1)}</span>
-          <span>{currentItem.releaseYear}</span>
+          {!isUnreleased && <span className="rating">★ {currentItem.rating.toFixed(1)}</span>}
+          <span>{isUnreleased ? `Releases ${releaseLabel}` : currentItem.releaseYear}</span>
           <span>{contentType}</span>
           <span>{country}</span>
         </div>
 
         {/* Dual Actions: Play & More info */}
         <div className="hero-buttons">
-          <button
-            type="button"
-            onClick={() => onPlay(currentItem)}
-            className="primary-btn"
-            title={`Play ${currentItem.title}`}
-          >
-            <Play className="w-4 h-4 fill-current" />
-            <span>Play</span>
-          </button>
+          {isUnreleased ? (
+            <span className="secondary-btn cursor-default">
+              <Calendar className="w-4 h-4" />
+              <span>Releases {releaseLabel}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onPlay(currentItem)}
+              className="primary-btn"
+              title={`Play ${currentItem.title}`}
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Play</span>
+            </button>
+          )}
 
           <button
             type="button"

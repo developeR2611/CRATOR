@@ -71,6 +71,12 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                 key={item.mediaId}
                 className="media-card is-wide group"
                 onClick={() => onPlay(media)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onPlay(media);
+                  }
+                }}
                 role="button"
                 tabIndex={0}
                 aria-label={`Continue watching ${media.title}`}
@@ -86,11 +92,11 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                   />
 
                   {/* Dark gradient overlay behind text */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
 
                   {/* Play icon hover overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                  <div className="absolute inset-0 z-[2] flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+                    <div className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
                       <Play className="w-4 h-4 fill-current ml-0.5" />
                     </div>
                   </div>
@@ -102,7 +108,7 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                       e.stopPropagation();
                       onRemove(item.mediaId);
                     }}
-                    className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/60 hover:bg-black/90 text-white/70 hover:text-white transition-colors cursor-pointer z-10"
+                    className="glass-control absolute top-2.5 right-2.5 p-1.5 rounded-full text-white/80 hover:text-white transition-all cursor-pointer z-10"
                     title="Remove from history"
                     aria-label={`Remove ${media.title} from history`}
                   >
@@ -114,7 +120,7 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                     <h3 className="font-display font-semibold text-sm text-white truncate drop-shadow-md">
                       {media.title}
                     </h3>
-                    <div className="flex items-center justify-between text-[11px] text-[#beb9bc] mt-0.5 font-mono">
+                    <div className="flex items-center justify-between text-[11px] text-[#d3d1d6] mt-0.5 font-mono">
                       <span>
                         {item.seasonNumber && item.episodeNumber
                           ? `S${item.seasonNumber}:E${item.episodeNumber}`
@@ -125,9 +131,9 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                   </div>
 
                   {/* Thin bottom progress indicator bar */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 pointer-events-none">
+                  <div className="absolute bottom-0 left-0 right-0 h-1 z-10 bg-white/20 backdrop-blur-xs pointer-events-none">
                     <div
-                      className="h-full bg-white transition-all duration-300"
+                      className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.65)] transition-all duration-300"
                       style={{ width: `${item.progressPercent}%` }}
                     />
                   </div>

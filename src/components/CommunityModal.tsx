@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Send, Copy, ExternalLink } from 'lucide-react';
 
 interface CommunityModalProps {
@@ -12,6 +12,15 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
   onClose,
   onShowToast,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleJoin = (channelName: string) => {
@@ -26,22 +35,30 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+    <div
+      className="glass-backdrop fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 animate-fadeIn"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="CRATOR Community"
+    >
       <div 
-        className="relative w-full max-w-lg bg-[#0e0d11] rounded-2xl overflow-hidden border border-white/12 shadow-2xl p-6 md:p-8 space-y-6 text-[#f3f0ea]"
+        className="glass-panel relative w-full max-w-lg rounded-2xl overflow-hidden p-6 md:p-8 space-y-6 text-[#f3f0ea]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white hover:text-black text-[#beb9bc] border border-white/10 transition-colors cursor-pointer"
+          aria-label="Close community modal"
+          className="glass-control absolute top-4 right-4 p-2 rounded-full text-[#c9c7cc] hover:text-white cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Icon & Title */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-lg font-display font-bold">
+          <div className="w-12 h-12 rounded-2xl glass-pill-active flex items-center justify-center shadow-lg font-display font-bold">
             <Send className="w-5 h-5 ml-0.5" />
           </div>
           <div>
@@ -49,20 +66,20 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
             <h2 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight">
               CRATOR Community
             </h2>
-            <p className="text-xs text-[#8e8a91]">
+            <p className="text-xs text-[#9a9ba1]">
               Join the official discussion & streaming announcement channels
             </p>
           </div>
         </div>
 
         {/* Stats Strip */}
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#141316] border border-white/10 text-center">
+        <div className="glass-surface grid grid-cols-2 gap-3 p-3.5 rounded-xl text-center">
           <div>
-            <span className="text-xs text-[#8e8a91] block">Active Members</span>
+            <span className="text-xs text-[#9a9ba1] block">Active Members</span>
             <span className="font-display font-bold text-base text-white">48,200+</span>
           </div>
           <div>
-            <span className="text-xs text-[#8e8a91] block">Daily Releases</span>
+            <span className="text-xs text-[#9a9ba1] block">Daily Releases</span>
             <span className="font-display font-bold text-base text-white">100+ 4K HDR</span>
           </div>
         </div>
@@ -83,19 +100,20 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
           ].map((ch) => (
             <div
               key={ch.name}
-              className="flex items-center justify-between p-3.5 rounded-xl bg-[#141316] border border-white/10 hover:border-white/20 transition-all"
+              className="glass-surface glass-hover flex items-center justify-between p-3.5 rounded-xl"
             >
               <div className="space-y-0.5 pr-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-xs font-semibold text-white">{ch.name}</h4>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-[#beb9bc]">
+                  <span className="glass-badge text-[10px] font-mono px-2 py-0.5 rounded-full text-[#c9c7cc]">
                     {ch.tag}
                   </span>
                 </div>
-                <p className="text-[11px] text-[#8e8a91]">{ch.desc}</p>
+                <p className="text-[11px] text-[#9a9ba1]">{ch.desc}</p>
               </div>
 
               <button
+                type="button"
                 onClick={() => handleJoin(ch.name)}
                 className="primary-btn h-8 px-3 rounded-lg text-xs shrink-0"
               >
@@ -107,11 +125,12 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
         </div>
 
         {/* Copy Invite Link */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-[#141316] border border-white/10">
-          <span className="text-xs font-mono text-[#8e8a91] truncate mr-2">
+        <div className="glass-surface flex items-center justify-between p-3 rounded-xl">
+          <span className="text-xs font-mono text-[#9a9ba1] truncate mr-2">
             https://t.me/crator_official
           </span>
           <button
+            type="button"
             onClick={handleCopy}
             className="secondary-btn h-8 px-3 rounded-lg text-xs shrink-0 flex items-center gap-1.5"
           >

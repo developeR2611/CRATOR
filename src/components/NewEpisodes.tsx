@@ -55,6 +55,12 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
                 onClick={() => {
                   if (media) onOpenDetails(media);
                 }}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && media) {
+                    e.preventDefault();
+                    onOpenDetails(media);
+                  }
+                }}
                 className="media-card is-wide group"
                 role="button"
                 tabIndex={0}
@@ -71,23 +77,24 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
                   />
 
                   {/* Gradient Scrim */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 pointer-events-none" />
+                  <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black/85 via-transparent to-black/20 pointer-events-none" />
 
-                  {/* Red Badge top right */}
+                  {/* Badge top right */}
                   <span className="card-badge">
                     {ep.statusBadge === 'Finale' ? 'Finale' : 'New episode'}
                   </span>
 
                   {/* Play hover button */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="absolute inset-0 z-[2] flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (media) onPlay(media);
                       }}
-                      className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform pointer-events-auto cursor-pointer"
+                      className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform pointer-events-auto cursor-pointer"
                       title="Play Episode"
+                      aria-label={`Play ${ep.showTitle} ${ep.seasonEpisode}`}
                     >
                       <Play className="w-4 h-4 fill-current ml-0.5" />
                     </button>
@@ -95,7 +102,7 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
 
                   {/* Bottom details on poster */}
                   <div className="absolute bottom-2.5 left-3 right-3 z-10 pointer-events-none">
-                    <span className="text-[11px] font-mono text-white/90">
+                    <span className="glass-badge inline-block px-2 py-0.5 rounded-full text-[11px] font-mono text-white/95">
                       {ep.seasonEpisode} · {ep.runtime}
                     </span>
                   </div>

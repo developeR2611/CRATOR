@@ -40,9 +40,9 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
   // Filter & sort logic
   const filteredItems = useMemo(() => {
     return mediaCatalog.filter((item) => {
-      // Verified Availability on VidRift
+      // Verified Availability on VidRift (also show upcoming unreleased titles without Play button)
       const avail = availabilityService.checkAvailability(item);
-      if (!avail.isAvailable) return false;
+      if (!avail.isAvailable && avail.confidence !== 'unreleased') return false;
 
       // Type
       if (selectedType !== 'all') {
@@ -225,10 +225,10 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
           </span>
         </div>
 
-        {/* 7Movies Secondary Meta Bar */}
-        <div className="dz-bar flex items-center justify-between border-t border-white/10 pt-4 mt-5 text-xs text-[#77737a] font-mono uppercase tracking-wider">
-          <span className="dz-count text-[#beb9bc] flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71]" />
+        {/* Secondary Meta Bar */}
+        <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-4 mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-3">
+          <span className="dz-count text-[#c9c7cc] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71] shadow-[0_0_8px_#2FBF71]" />
             <span>{filteredItems.length} verified titles available on VidRift</span>
           </span>
 
@@ -236,7 +236,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <button 
               type="button" 
               onClick={handlePickRandom}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-all text-xs font-mono uppercase tracking-wider cursor-pointer"
+              className="glass-pill inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider text-[#f3f0ea] cursor-pointer"
             >
               <Dices className="w-3.5 h-3.5" />
               <span>Pick one for me</span>

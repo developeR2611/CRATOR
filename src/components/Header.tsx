@@ -17,8 +17,6 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onOpenSettings: () => void;
   onOpenDiscord: () => void;
-  adsEnabled?: boolean;
-  onToggleAds?: () => void;
   isHidden?: boolean;
 }
 
@@ -28,20 +26,20 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onOpenSettings,
   onOpenDiscord,
-  adsEnabled = true,
-  onToggleAds,
   isHidden = false,
 }) => {
   return (
     <header className={`topbar ${isHidden ? 'is-hidden' : ''}`} aria-hidden={isHidden}>
       {/* Desktop Brand (Left) */}
-      <span 
+      <button
+        type="button"
         className="desktop-nav-brand" 
         onClick={() => onSelectTab('home')}
         title="CRATOR"
+        aria-label="CRATOR Home"
       >
         CRATOR
-      </span>
+      </button>
 
       {/* Floating Center Pill Navigation */}
       <nav className="nav-pill" aria-label="Primary navigation">
@@ -134,9 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenSearch}
-            className={`nav-action ${activeTab === 'search' ? 'bg-white text-black' : ''}`}
+            className={`nav-action ${activeTab === 'search' ? 'is-active' : ''}`}
             title="Search movies & TV shows"
             aria-label="Search"
+            aria-pressed={activeTab === 'search'}
           >
             <Search className="w-4 h-4" />
           </button>
@@ -153,26 +152,6 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </nav>
-
-      {/* Right Ads Pill Toggle */}
-      <div className="pref-pill-wrap">
-        <button
-          type="button"
-          onClick={onToggleAds}
-          className="pref-pill"
-          aria-label={adsEnabled ? 'Ads are on. Change' : 'Ads are off'}
-          title="Ad experience toggle"
-        >
-          <span>Ads</span>
-          <span 
-            className="pref-dot" 
-            style={{ 
-              backgroundColor: adsEnabled ? '#10b981' : '#6b7280',
-              boxShadow: adsEnabled ? '0 0 8px #10b981' : 'none'
-            }} 
-          />
-        </button>
-      </div>
     </header>
   );
 };

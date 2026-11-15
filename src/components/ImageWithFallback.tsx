@@ -202,39 +202,39 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden bg-[#121114] ${containerClassName}`}>
+    <div className={`relative overflow-hidden bg-[#0e1118] ${containerClassName}`}>
       {/* Background Pulse while loading */}
       {!isLoaded && !hasError && currentSrc && (
-        <div className="absolute inset-0 bg-[#161519] animate-pulse pointer-events-none" />
+        <div className="absolute inset-0 bg-[#141822] animate-pulse pointer-events-none" />
       )}
 
       {hasError || !currentSrc ? (
         isAvatar ? (
-          /* Avatar Fallback: Elegant circle with dark ink background */
-          <div className="w-full h-full flex items-center justify-center bg-[#1c1b20] border border-white/15 text-[#f3f0ea] font-mono font-bold text-xs select-none shadow-inner">
+          /* Avatar Fallback: Elegant circle with obsidian liquid-glass surface */
+          <div className="w-full h-full flex items-center justify-center glass-surface text-[#f3f0ea] font-mono font-bold text-xs select-none">
             <span>{getInitials(fallbackTitle || alt)}</span>
           </div>
         ) : (
           /* Poster Fallback: Rich full-bleed cinematic card with title */
-          <div className="w-full h-full flex flex-col items-center justify-between p-3.5 text-center bg-[#121114] border border-white/12 select-none relative overflow-hidden group">
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="w-full h-full flex flex-col items-center justify-between p-3.5 text-center glass-surface select-none relative overflow-hidden group">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/8 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -bottom-10 -left-10 w-28 h-28 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="w-full flex items-center justify-between text-[10px] text-[#beb9bc] font-mono font-bold uppercase tracking-wider z-10">
+            <div className="w-full flex items-center justify-between text-[10px] text-[#c9c7cc] font-mono font-bold uppercase tracking-wider z-10">
               <span className="font-display">CRATOR</span>
               <span className="text-[#2FBF71] font-bold">4K</span>
             </div>
 
             <div className="flex flex-col items-center justify-center my-auto py-2 z-10 max-w-[95%]">
-              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/15 flex items-center justify-center mb-2 shadow-lg text-[#f3f0ea]">
-                <Film className="w-5 h-5 text-white/80" />
+              <div className="w-10 h-10 rounded-xl glass-control flex items-center justify-center mb-2 text-[#f3f0ea]">
+                <Film className="w-5 h-5 text-white/85" />
               </div>
               <h4 className="text-xs font-bold text-white line-clamp-3 leading-snug drop-shadow-sm font-display">
                 {fallbackTitle || alt || 'CRATOR Cinema'}
               </h4>
             </div>
 
-            <div className="w-full pt-1.5 border-t border-white/10 text-[9px] text-[#77737a] tracking-widest uppercase font-mono z-10">
+            <div className="w-full pt-1.5 border-t border-white/10 text-[9px] text-[#8a8890] tracking-widest uppercase font-mono z-10">
               VidRift Playable
             </div>
           </div>

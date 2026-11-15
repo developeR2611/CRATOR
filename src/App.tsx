@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { Header, NavTab } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { MediaCarousel } from './components/MediaCarousel';
@@ -37,7 +38,6 @@ import {
 export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<NavTab>('home');
-  const [adsEnabled, setAdsEnabled] = useState<boolean>(true);
 
   // Watchlist State (with Supabase / LocalStorage synchronization)
   const [watchlistIds, setWatchlistIds] = useState<string[]>(['dune-2', 'severance', 'cyberpunk-edgerunners', 'arcane']);
@@ -250,7 +250,25 @@ export default function App() {
     showToast('Cleared watch history');
   };
 
-  // Curated datasets for sections
+  // Helper to deduplicate media lists by tmdbId or id
+  const getMediaKey = (m: MediaItem) => (m.tmdbId ? `tmdb:${m.type === 'movie' ? 'movie' : 'tv'}:${m.tmdbId}` : m.id);
+
+  // Unified catalog combining curated entries + live TMDB feeds for Watchlist, Continue Watching, and Browse tabs
+  const allCatalogItems = useMemo(() => {
+    const map = new Map<string, MediaItem>();
+    for (const item of MEDIA_CATALOG) {
+      map.set(getMediaKey(item), item);
+    }
+    for (const item of [...tmdbTrendingItems, ...tmdbPopularItems, ...tmdbTopRatedItems]) {
+      const key = getMediaKey(item);
+      if (!map.has(key)) {
+        map.set(key, item);
+      }
+    }
+    return Array.from(map.values());
+  }, [tmdbTrendingItems, tmdbPopularItems, tmdbTopRatedItems]);
+
+  // Curated & deduplicated datasets for Home sections (no repeating the same titles across rows)
   const heroFeaturedItems = useMemo(() => {
     const list = MEDIA_CATALOG.filter((item) => item.featuredInHero);
     return list.length > 0 ? list.slice(0, 5) : MEDIA_CATALOG.slice(0, 5);
@@ -262,25 +280,58 @@ export default function App() {
     return ranked.length > 0 ? ranked.slice(0, 10) : MEDIA_CATALOG.slice(0, 10);
   }, []);
 
+  const topTenKeys = useMemo(() => new Set(topTenItems.map(getMediaKey)), [topTenItems]);
+
+  const homeTrendingWorldwide = useMemo(() => {
+    const live = tmdbTrendingItems.filter((item) => !topTenKeys.has(getMediaKey(item)));
+    if (live.length >= 6) return live.slice(0, 14);
+    const catalogFallback = MEDIA_CATALOG.filter((item) => item.isTrending && !topTenKeys.has(getMediaKey(item)));
+    return [...live, ...catalogFallback].slice(0, 14);
+  }, [tmdbTrendingItems, topTenKeys]);
+
+  const homePopularMovies = useMemo(() => {
+    const seen = new Set<string>([...topTenKeys, ...homeTrendingWorldwide.map(getMediaKey)]);
+    const live = tmdbPopularItems.filter((item) => !seen.has(getMediaKey(item)));
+    const catalogFallback = MEDIA_CATALOG.filter((item) => item.type === 'movie' && !seen.has(getMediaKey(item)));
+    const combined = [...live, ...catalogFallback];
+    return combined.length > 0 ? combined.slice(0, 14) : MEDIA_CATALOG.filter((item) => item.type === 'movie');
+  }, [tmdbPopularItems, topTenKeys, homeTrendingWorldwide]);
+
+  const homeAcclaimedSeries = useMemo(() => {
+    const seen = new Set<string>([
+      ...topTenKeys,
+      ...homeTrendingWorldwide.map(getMediaKey),
+      ...homePopularMovies.map(getMediaKey),
+    ]);
+    const live = tmdbTopRatedItems.filter((item) => !seen.has(getMediaKey(item)));
+    const catalogFallback = MEDIA_CATALOG.filter(
+      (item) => (item.type === 'series' || item.type === 'anime') && !seen.has(getMediaKey(item))
+    );
+    const combined = [...live, ...catalogFallback];
+    return combined.length > 0
+      ? combined.slice(0, 14)
+      : MEDIA_CATALOG.filter((item) => item.type === 'series' || item.type === 'anime');
+  }, [tmdbTopRatedItems, topTenKeys, homeTrendingWorldwide, homePopularMovies]);
+
   const freshMovies = useMemo(() => {
-    return MEDIA_CATALOG.filter((item) => item.type === 'movie');
-  }, []);
+    return allCatalogItems.filter((item) => item.type === 'movie');
+  }, [allCatalogItems]);
 
   const popularSeries = useMemo(() => {
-    return MEDIA_CATALOG.filter((item) => item.type === 'series' || item.type === 'anime');
-  }, []);
+    return allCatalogItems.filter((item) => item.type === 'series' || item.type === 'anime');
+  }, [allCatalogItems]);
 
   // Related items for modal
   const modalRelatedItems = useMemo(() => {
     if (!selectedMedia) return [];
-    return MEDIA_CATALOG.filter(
+    return allCatalogItems.filter(
       (m) => m.id !== selectedMedia.id && (m.genres.some((g) => selectedMedia.genres.includes(g)) || m.type === selectedMedia.type)
     );
-  }, [selectedMedia]);
+  }, [selectedMedia, allCatalogItems]);
 
   return (
-    <div className="min-h-screen bg-black text-[#f3f0ea] flex flex-col antialiased selection:bg-white selection:text-black">
-      {/* 7movies Floating Header */}
+    <div className="min-h-screen bg-[#040508] text-[#f3f0ea] flex flex-col antialiased selection:bg-white selection:text-black">
+      {/* Floating Header */}
       <Header
         activeTab={activeTab}
         isHidden={Boolean(selectedMedia || playingMedia)}
@@ -294,29 +345,32 @@ export default function App() {
         }}
         onOpenSettings={() => setProfileModalOpen(true)}
         onOpenDiscord={() => setCommunityModalOpen(true)}
-        adsEnabled={adsEnabled}
-        onToggleAds={() => {
-          const nextState = !adsEnabled;
-          setAdsEnabled(nextState);
-          showToast(nextState ? 'Ads enabled' : 'Ads disabled');
-        }}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 w-full min-w-0">
         {/* ================================================================= */}
-        {/* HOME VIEW: Pixel-Accurate 7movies layout                         */}
+        {/* HOME VIEW: Clean, Non-Redundant Editorial Flow                    */}
         {/* ================================================================= */}
         {activeTab === 'home' && (
-          <div className="space-y-4 sm:space-y-6 pb-20">
-            {/* Cinematic Hero Section */}
+          <div className="pb-12">
+            {/* 1. Cinematic Hero Spotlight */}
             <HeroSection
               featuredItems={heroFeaturedItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
             />
 
-            {/* Top 10 Today: THE WEEK'S MOST WATCHED */}
+            {/* 2. Continue Watching (if active) */}
+            <ContinueWatching
+              items={continueWatchingItems}
+              mediaCatalog={allCatalogItems}
+              onPlay={(item) => handlePlay(item)}
+              onRemove={handleRemoveContinueWatching}
+              onClearHistory={handleClearContinueWatching}
+            />
+
+            {/* 3. Top 10 Today (Unique #1-#10 ranked showcase) */}
             <MediaCarousel
               eyebrow="The week's most watched"
               title="Top 10 Today"
@@ -329,39 +383,19 @@ export default function App() {
               isWide={true}
             />
 
-            {/* Continue Watching Section */}
-            <ContinueWatching
-              items={continueWatchingItems}
-              mediaCatalog={MEDIA_CATALOG}
-              onPlay={(item) => handlePlay(item)}
-              onRemove={handleRemoveContinueWatching}
-              onClearHistory={handleClearContinueWatching}
-            />
-
-            {/* New Episodes Section */}
+            {/* 4. Latest Series Episode Drops */}
             <NewEpisodes
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
             />
 
-            {/* Trending Now */}
-            <MediaCarousel
-              eyebrow="Popular this week"
-              title="Trending now"
-              items={MEDIA_CATALOG.filter((m) => m.featuredInHero || (m.topTenRank && m.topTenRank <= 8))}
-              onPlay={(item) => handlePlay(item)}
-              onOpenDetails={(item) => setSelectedMedia(item)}
-              onToggleWatchlist={toggleWatchlist}
-              isInWatchlist={isInWatchlist}
-            />
-
-            {/* TMDB Live Trending Carousel */}
-            {tmdbTrendingItems.length > 0 && (
+            {/* 5. Global Trending (Deduplicated against Top 10) */}
+            {homeTrendingWorldwide.length > 0 && (
               <MediaCarousel
-                eyebrow="Live The Movie Database"
+                eyebrow="Live worldwide charts"
                 title="Trending worldwide"
-                items={tmdbTrendingItems}
+                items={homeTrendingWorldwide}
                 onPlay={(item) => handlePlay(item)}
                 onOpenDetails={(item) => setSelectedMedia(item)}
                 onToggleWatchlist={toggleWatchlist}
@@ -369,12 +403,12 @@ export default function App() {
               />
             )}
 
-            {/* TMDB Live Popular Cinema */}
-            {tmdbPopularItems.length > 0 && (
+            {/* 6. Popular Cinema (Deduplicated Movies) */}
+            {homePopularMovies.length > 0 && (
               <MediaCarousel
                 eyebrow="Theatrical releases"
-                title="Popular cinema"
-                items={tmdbPopularItems}
+                title="Popular movies"
+                items={homePopularMovies}
                 onPlay={(item) => handlePlay(item)}
                 onOpenDetails={(item) => setSelectedMedia(item)}
                 onToggleWatchlist={toggleWatchlist}
@@ -382,12 +416,12 @@ export default function App() {
               />
             )}
 
-            {/* TMDB Live Top Rated Television */}
-            {tmdbTopRatedItems.length > 0 && (
+            {/* 7. Critically Acclaimed Series & Anime (Deduplicated) */}
+            {homeAcclaimedSeries.length > 0 && (
               <MediaCarousel
                 eyebrow="Critically acclaimed"
-                title="Top rated television"
-                items={tmdbTopRatedItems}
+                title="Series & anime"
+                items={homeAcclaimedSeries}
                 onPlay={(item) => handlePlay(item)}
                 onOpenDetails={(item) => setSelectedMedia(item)}
                 onToggleWatchlist={toggleWatchlist}
@@ -395,25 +429,28 @@ export default function App() {
               />
             )}
 
-            {/* New Seasons Rail */}
-            <MediaCarousel
-              eyebrow="Fresh drops"
-              title="New seasons"
-              items={popularSeries}
-              onPlay={(item) => handlePlay(item)}
-              onOpenDetails={(item) => setSelectedMedia(item)}
-              onToggleWatchlist={toggleWatchlist}
-              isInWatchlist={isInWatchlist}
-            />
-
-            {/* 7movies Discover Section Toolbar & Grid on Home */}
-            <ExploreGrid
-              mediaCatalog={MEDIA_CATALOG}
-              onPlay={(item) => handlePlay(item)}
-              onOpenDetails={(item) => setSelectedMedia(item)}
-              onToggleWatchlist={toggleWatchlist}
-              isInWatchlist={isInWatchlist}
-            />
+            {/* Clean CTA to Browse Full Library (replaces redundant inline Discover grid dump) */}
+            <section className="px-[4.5vw] pt-4">
+              <div className="glass-panel glass-hover rounded-2xl px-6 py-6 sm:px-8 sm:py-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <p className="eyebrow">Full library</p>
+                  <h2 className="font-display font-bold text-xl sm:text-2xl text-white">
+                    Filter by genre, year, language & platform
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('discover');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="primary-btn shrink-0"
+                >
+                  <span>Browse Discover</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
           </div>
         )}
 
@@ -425,7 +462,7 @@ export default function App() {
             <MediaCarousel
               eyebrow="Feature films"
               title="Trending movies"
-              items={freshMovies}
+              items={freshMovies.slice(0, 14)}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -434,7 +471,7 @@ export default function App() {
 
             <ExploreGrid
               initialType="movie"
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -449,7 +486,7 @@ export default function App() {
         {activeTab === 'tv' && (
           <div className="pt-24 pb-20 space-y-6">
             <NewEpisodes
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
             />
@@ -457,7 +494,7 @@ export default function App() {
             <MediaCarousel
               eyebrow="Television masterworks"
               title="Popular series & anime"
-              items={popularSeries}
+              items={popularSeries.slice(0, 14)}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -466,7 +503,7 @@ export default function App() {
 
             <ExploreGrid
               initialType="series"
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -481,7 +518,7 @@ export default function App() {
         {activeTab === 'discover' && (
           <div className="pt-24 pb-20">
             <ExploreGrid
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -497,7 +534,7 @@ export default function App() {
           <div className="pt-24 pb-20">
             <WatchlistView
               watchlistIds={watchlistIds}
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -519,7 +556,7 @@ export default function App() {
         {activeTab === ('search' as NavTab) && (
           <div className="pt-24 pb-20">
             <SearchView
-              mediaCatalog={MEDIA_CATALOG}
+              mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={(item) => setSelectedMedia(item)}
               onToggleWatchlist={toggleWatchlist}
@@ -531,39 +568,39 @@ export default function App() {
 
       {/* 7movies Clean Site Footer */}
       <footer className="site-footer">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-6 border-b border-white/10">
+        <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <span className="font-display font-bold text-base text-white tracking-tight">CRATOR</span>
             <span className="text-white/20">/</span>
             <span className="text-xs text-[#8e8a91]">VidRift 4K Ultra HD</span>
           </div>
 
-          <div className="flex items-center gap-5 text-xs text-[#beb9bc]">
+          <div className="flex items-center flex-wrap gap-2 text-xs text-[#c9c7cc]">
             <button 
               type="button"
               onClick={() => setCommunityModalOpen(true)}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="glass-pill px-3 py-1.5 rounded-full hover:text-white transition-colors cursor-pointer"
             >
               Telegram Community
             </button>
             <button 
               type="button"
               onClick={() => setProfileModalOpen(true)}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="glass-pill px-3 py-1.5 rounded-full hover:text-white transition-colors cursor-pointer"
             >
               Stream Settings
             </button>
             <button 
               type="button"
               onClick={() => refreshHomePage(true)}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="glass-pill px-3 py-1.5 rounded-full hover:text-white transition-colors cursor-pointer"
             >
               {isRefreshingHome ? 'Refreshing...' : 'Refresh Feeds'}
             </button>
           </div>
         </div>
 
-        <div className="pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[11px] text-[#77737a]">
+        <div className="w-full pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[11px] text-[#77737a]">
           <p>
             CRATOR does not store any files on our server, we only link to media hosted on 3rd party services.
           </p>

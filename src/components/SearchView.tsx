@@ -202,11 +202,11 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   const [onlyPlayable, setOnlyPlayable] = useState<boolean>(true);
 
-  // Filter currently displayed results by Availability, Type, and Genre
+  // Filter currently displayed results by Availability (keep released + upcoming unreleased), Type, and Genre
   const filteredResults = results.filter((item) => {
     if (onlyPlayable) {
       const avail = availabilityService.checkAvailability(item);
-      if (!avail.isAvailable) return false;
+      if (!avail.isAvailable && avail.confidence !== 'unreleased') return false;
     }
     if (selectedType !== 'all') {
       const isTv = item.type === 'series' || item.type === 'anime' || (item.type as any) === 'tv';
@@ -234,17 +234,17 @@ export const SearchView: React.FC<SearchViewProps> = ({
       {/* Global Search Input Box */}
       <form onSubmit={handleSearchSubmit} className="relative w-full">
         <div className="relative flex items-center">
-          <Search className="w-4 h-4 text-[#8e8a91] absolute left-4 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#9a9ba1] absolute left-4 pointer-events-none z-10" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for movies, TV shows, actors (e.g. Avatar, Dune, Severance)..."
-            className="w-full bg-[#141316] border border-white/15 hover:border-white/30 focus:border-white/50 rounded-2xl pl-11 pr-24 py-3.5 text-sm text-[#f3f0ea] placeholder-[#77737a] focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-xl"
+            className="glass-control w-full rounded-2xl pl-11 pr-24 py-3.5 text-sm text-[#f3f0ea] placeholder-[#8a8890] focus:outline-none"
           />
 
-          <div className="absolute right-4 flex items-center gap-2">
+          <div className="absolute right-4 flex items-center gap-2 z-10">
             {isLoading && (
               <Loader2 className="w-4 h-4 text-white animate-spin" />
             )}
@@ -255,10 +255,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   setQuery('');
                   setResults([]);
                 }}
-                className="p-1 rounded-full text-[#8e8a91] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="glass-pill p-1.5 rounded-full text-[#beb9bc] hover:text-white cursor-pointer"
                 aria-label="Clear search query"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -289,11 +289,13 @@ export const SearchView: React.FC<SearchViewProps> = ({
           {['All', 'Action', 'Sci-Fi', 'Drama', 'Thriller', 'Animation', 'Fantasy', 'Comedy'].map((genre) => (
             <button
               key={genre}
+              type="button"
+              aria-pressed={selectedGenre === genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-xs shrink-0 transition-all cursor-pointer ${
                 selectedGenre === genre
-                  ? 'bg-white text-black font-semibold'
-                  : 'bg-[#141316] text-[#beb9bc] hover:text-white border border-white/10'
+                  ? 'glass-pill-active'
+                  : 'glass-pill text-[#c9c7cc]'
               }`}
             >
               {genre}
@@ -307,15 +309,16 @@ export const SearchView: React.FC<SearchViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {/* Recent Searches */}
           {recentSearches.length > 0 && (
-            <div className="bg-[#141316] rounded-2xl p-4 border border-white/10 space-y-3">
+            <div className="glass-panel rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="eyebrow flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   Recent Searches
                 </span>
                 <button
+                  type="button"
                   onClick={clearAllRecent}
-                  className="text-[11px] text-[#8e8a91] hover:text-white transition-colors cursor-pointer"
+                  className="text-[11px] text-[#9a9ba1] hover:text-white transition-colors cursor-pointer"
                 >
                   Clear All
                 </button>
@@ -325,12 +328,13 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 {recentSearches.map((item) => (
                   <button
                     key={item}
+                    type="button"
                     onClick={() => handleTagClick(item)}
-                    className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1a191d] hover:bg-white hover:text-black text-xs text-[#beb9bc] border border-white/10 transition-colors cursor-pointer"
+                    className="glass-pill group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
                   >
                     <span>{item}</span>
                     <X
-                      className="w-3 h-3 text-[#77737a] group-hover:text-black opacity-60 hover:opacity-100"
+                      className="w-3 h-3 text-[#8a8890] group-hover:text-white opacity-70 hover:opacity-100"
                       onClick={(e) => removeRecentSearch(item, e)}
                     />
                   </button>
@@ -340,7 +344,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
           )}
 
           {/* Popular Search Tags */}
-          <div className="bg-[#141316] rounded-2xl p-4 border border-white/10 space-y-3">
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
             <span className="eyebrow block">
               Trending Searches
             </span>
@@ -349,8 +353,9 @@ export const SearchView: React.FC<SearchViewProps> = ({
               {POPULAR_SEARCH_TAGS.map((tag) => (
                 <button
                   key={tag}
+                  type="button"
                   onClick={() => handleTagClick(tag)}
-                  className="px-3 py-1.5 rounded-full bg-[#141316] hover:bg-white hover:text-black text-xs text-[#beb9bc] border border-white/10 transition-all cursor-pointer"
+                  className="glass-pill px-3 py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
                 >
                   {tag}
                 </button>
@@ -410,7 +415,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
         <div className="dz-grid">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="flex flex-col space-y-2 animate-pulse">
-              <div className="aspect-[2/3] rounded-xl bg-[#141316] border border-white/10" />
+              <div className="aspect-[2/3] rounded-xl glass-surface" />
               <div className="h-3 bg-white/10 rounded w-3/4" />
               <div className="h-2.5 bg-white/5 rounded w-1/2" />
             </div>
@@ -438,6 +443,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
           {hasMore && (
             <div className="flex justify-center pt-4">
               <button
+                type="button"
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
                 className="primary-btn h-10 px-6 rounded-xl text-xs font-semibold"
@@ -457,16 +463,17 @@ export const SearchView: React.FC<SearchViewProps> = ({
       ) : (
         /* Empty State */
         query && !isLoading && (
-          <div className="py-20 text-center bg-[#141316] rounded-2xl border border-white/10 max-w-lg mx-auto space-y-3">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto text-white">
+          <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
+            <div className="glass-surface w-12 h-12 rounded-full flex items-center justify-center mx-auto text-white">
               <Search className="w-5 h-5" />
             </div>
             <h3 className="font-display font-bold text-lg text-[#f3f0ea]">No results found for "{query}"</h3>
-            <p className="text-xs text-[#8e8a91] max-w-xs mx-auto">
+            <p className="text-xs text-[#9a9ba1] max-w-xs mx-auto">
               Check for typos or try searching with different keywords, actor names, or genres.
             </p>
             <div className="pt-2">
               <button
+                type="button"
                 onClick={() => {
                   setQuery('');
                   setSelectedGenre('All');

@@ -48,6 +48,67 @@ const SEED_CONFIRMED_TMDB_IDS: Record<number, boolean> = {
   93740: true,   // Shogun
 };
 
+export function getTodayIsoDate(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function isFutureIsoDate(dateStr?: string | null): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  const normalized = dateStr.trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return false;
+  return normalized > getTodayIsoDate();
+}
+
+export function formatReleaseDate(dateStr?: string, fallbackYear?: number): string {
+  if (dateStr) {
+    const clean = dateStr.trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+      const [y, m, d] = clean.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      return dt.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+    }
+  }
+  return fallbackYear ? String(fallbackYear) : 'TBA';
+}
+
+export function isMediaUnreleased(item: Partial<MediaItem> | null | undefined): boolean {
+  if (!item) return false;
+
+  if (item.releaseDate && isFutureIsoDate(item.releaseDate)) {
+    return true;
+  }
+
+  const currentYear = new Date().getFullYear();
+  if (!item.releaseDate && item.releaseYear && item.releaseYear > currentYear) {
+    return true;
+  }
+
+  if (item.tmdbStatus) {
+    const st = item.tmdbStatus.trim().toLowerCase();
+    if (st === 'rumored' || st === 'planned' || st === 'in production' || st === 'post production') {
+      return true;
+    }
+    if (st === 'pilot' && (!item.totalSeasons || item.totalSeasons < 1)) {
+      return true;
+    }
+  }
+
+  if ((item.type === 'series' || item.type === 'anime') && item.totalSeasons !== undefined && item.totalSeasons < 1) {
+    return true;
+  }
+
+  return false;
+}
+
 class AvailabilityService {
   private cache: Map<string, AvailabilityResult> = new Map();
 
@@ -107,8 +168,20 @@ class AvailabilityService {
    */
   public checkAvailability(item: MediaItem): AvailabilityResult {
     const key = this.getCacheKey(item);
-    const cached = this.cache.get(key);
     const now = Date.now();
+
+    // 0. Always enforce unreleased check first so stale cache / seed IDs never mark unreleased titles playable
+    if (isMediaUnreleased(item)) {
+      const label = formatReleaseDate(item.releaseDate, item.releaseYear);
+      return {
+        isAvailable: false,
+        confidence: 'unreleased',
+        reason: `Releases ${label}. Not out yet.`,
+        checkedAt: now,
+      };
+    }
+
+    const cached = this.cache.get(key);
 
     // If cached within the last 48 hours, return cached verdict
     if (cached && now - cached.checkedAt < 48 * 60 * 60 * 1000) {
@@ -130,9 +203,8 @@ class AvailabilityService {
       return res;
     }
 
-    // 2. Validate release year & date
+    // 2. Validate release year
     const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
 
     if (item.releaseYear > currentYear) {
       const res: AvailabilityResult = {

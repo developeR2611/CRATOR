@@ -69,9 +69,11 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
 
             {/* Clear All */}
             <button
+              type="button"
               onClick={onClearWatchlist}
-              className="p-2 rounded-xl bg-white/5 hover:bg-rose-950/60 text-[#beb9bc] hover:text-rose-300 border border-white/10 transition-colors cursor-pointer"
+              className="glass-control p-2.5 rounded-xl text-[#c9c7cc] hover:text-rose-300 hover:border-rose-400/40 transition-colors cursor-pointer"
               title="Clear Library"
+              aria-label="Clear Library"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -94,17 +96,18 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="py-20 text-center bg-[#141316] rounded-2xl border border-white/10 max-w-lg mx-auto space-y-4">
-          <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto text-white">
+        <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
+          <div className="glass-surface w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white">
             <Bookmark className="w-6 h-6" />
           </div>
           <div className="space-y-1">
             <h3 className="font-display font-bold text-lg text-[#f3f0ea]">Your list is empty</h3>
-            <p className="text-xs text-[#8e8a91] max-w-xs mx-auto">
+            <p className="text-xs text-[#9a9ba1] max-w-xs mx-auto">
               Save movies and TV shows to your list to easily stream them anytime with VidRift.
             </p>
           </div>
           <button
+            type="button"
             onClick={onExplore}
             className="primary-btn h-10 px-6 rounded-xl text-xs font-semibold"
           >

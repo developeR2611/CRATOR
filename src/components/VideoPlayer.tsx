@@ -316,96 +316,104 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* 2. Loading Overlay */}
       {isLoading && !errorMessage && (
-        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-3.5 z-40 pointer-events-none">
-          <Loader2 className="w-10 h-10 text-white animate-spin" />
-          <div className="text-center space-y-1">
-            <h3 className="text-[#f3f0ea] font-semibold text-sm">
-              Connecting to VidRift Stream
-            </h3>
-            <p className="text-xs text-[#8e8a91] font-mono">Title: {item.title}</p>
+        <div className="glass-backdrop absolute inset-0 flex flex-col items-center justify-center p-4 z-40 pointer-events-none">
+          <div className="glass-panel rounded-2xl px-8 py-6 flex flex-col items-center gap-3.5 text-center">
+            <Loader2 className="w-9 h-9 text-white animate-spin" />
+            <div className="space-y-1">
+              <h3 className="text-[#f3f0ea] font-semibold text-sm">
+                Connecting to VidRift Stream
+              </h3>
+              <p className="text-xs text-[#9a9ba1] font-mono">Title: {item.title}</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* 3. Error Overlay */}
       {errorMessage && !isLoading && (
-        <div className="absolute inset-0 bg-[#0e0d11] flex flex-col items-center justify-center p-6 z-40 text-center max-w-xl mx-auto space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-rose-950/60 border border-rose-500/40 flex items-center justify-center shadow-2xl text-rose-400">
-            <AlertCircle className="w-8 h-8" />
-          </div>
+        <div className="glass-backdrop absolute inset-0 flex flex-col items-center justify-center p-6 z-40">
+          <div className="glass-panel rounded-2xl p-6 sm:p-8 text-center max-w-xl w-full space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-rose-950/60 border border-rose-400/40 flex items-center justify-center shadow-2xl text-rose-300 mx-auto">
+              <AlertCircle className="w-8 h-8" />
+            </div>
 
-          <div className="space-y-2">
-            <h2 className="font-display font-bold text-xl md:text-2xl text-[#f3f0ea]">
-              Playback Unavailable
-            </h2>
-            <p className="text-sm font-medium text-[#beb9bc]">
-              {errorMessage}
-            </p>
-            {errorCode && (
-              <span className="inline-block px-2.5 py-1 rounded bg-black/50 border border-white/10 text-[11px] font-mono text-[#8e8a91]">
-                Code: {errorCode}
-              </span>
-            )}
-          </div>
+            <div className="space-y-2">
+              <h2 className="font-display font-bold text-xl md:text-2xl text-[#f3f0ea]">
+                Playback Unavailable
+              </h2>
+              <p className="text-sm font-medium text-[#c9c7cc]">
+                {errorMessage}
+              </p>
+              {errorCode && (
+                <span className="glass-badge inline-block px-3 py-1 rounded-full text-[11px] font-mono text-[#c9c7cc]">
+                  Code: {errorCode}
+                </span>
+              )}
+            </div>
 
-          {/* Action CTAs */}
-          <div className="flex items-center justify-center gap-3 flex-wrap pt-2">
-            <button
-              onClick={loadVidRift}
-              className="primary-btn h-10 px-5 text-xs rounded-xl"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Retry Playback</span>
-            </button>
-
-            {onViewDetails && item && (
+            {/* Action CTAs */}
+            <div className="flex items-center justify-center gap-3 flex-wrap pt-2">
               <button
-                onClick={() => onViewDetails(item)}
+                type="button"
+                onClick={loadVidRift}
+                className="primary-btn h-10 px-5 text-xs rounded-xl"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Retry Playback</span>
+              </button>
+
+              {onViewDetails && item && (
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(item)}
+                  className="secondary-btn h-10 px-4 text-xs rounded-xl"
+                >
+                  <Info className="w-4 h-4 text-[#c9c7cc]" />
+                  <span>Details & Episodes</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onClose}
                 className="secondary-btn h-10 px-4 text-xs rounded-xl"
               >
-                <Info className="w-4 h-4 text-[#beb9bc]" />
-                <span>Details & Episodes</span>
+                Back to Catalog
               </button>
-            )}
-
-            <button
-              onClick={onClose}
-              className="secondary-btn h-10 px-4 text-xs rounded-xl"
-            >
-              Back to Catalog
-            </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* 4. Top Header Bar */}
       <div 
-        className="absolute top-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-b from-black/95 via-black/40 to-transparent flex items-center justify-between z-30 pointer-events-auto transition-opacity duration-300"
+        className="glass-overlay-bar absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between gap-3 z-30 pointer-events-auto transition-opacity duration-300"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-full bg-black/60 hover:bg-white hover:text-black text-white border border-white/10 transition-colors cursor-pointer"
+            className="glass-control p-2.5 rounded-full text-white cursor-pointer shrink-0"
             aria-label="Back to title"
             title="Exit player (Esc)"
           >
             <X className="w-5 h-5" />
           </button>
-          <div>
-            <h2 className="font-display font-bold text-base md:text-lg text-[#f3f0ea] truncate max-w-xs sm:max-w-md md:max-w-xl">
+          <div className="min-w-0">
+            <h2 className="font-display font-bold text-base md:text-lg text-[#f3f0ea] truncate max-w-[54vw] sm:max-w-md md:max-w-xl">
               {titleToDisplay}
             </h2>
-            <div className="flex items-center gap-2 text-xs text-[#beb9bc]">
-              <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded text-[11px] text-[#f3f0ea] border border-white/15">
+            <div className="flex items-center gap-2 text-xs text-[#c9c7cc]">
+              <span className="glass-badge font-mono px-2 py-0.5 rounded-full text-[11px] text-[#f3f0ea]">
                 VidRift 4K Ultra HD
               </span>
               {tmdbNumericId && (
-                <span className="text-[11px] font-mono text-[#8e8a91] hidden sm:inline">
+                <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
                   TMDB: {tmdbNumericId}
                 </span>
               )}
               {isTv && (
-                <span className="text-[11px] font-mono text-[#8e8a91] hidden sm:inline">
+                <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
                   Season {currentSeason} · Episode {currentEpisode}
                 </span>
               )}
@@ -414,11 +422,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
 
         {/* Top Right: Details Button */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           {onViewDetails && (
             <button
+              type="button"
               onClick={() => onViewDetails(item)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-white hover:text-black text-[#beb9bc] text-xs font-semibold border border-white/10 transition-all cursor-pointer"
+              className="glass-pill flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
               title="View Details"
             >
               <Info className="w-3.5 h-3.5" />

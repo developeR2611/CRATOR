@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, 
   Play, 
@@ -6,19 +6,38 @@ import {
   Check, 
   Share2, 
   Download, 
-  ExternalLink, 
+  Calendar,
   ChevronDown, 
-  Loader2 
+  Loader2,
+  X,
+  MapPin,
+  ChevronRight,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
-import { MediaItem, Episode, Season } from '../types';
+import {
+  MediaItem,
+  Episode,
+  Season,
+  CastMember,
+  TrailerVideo,
+  PersonDetails,
+} from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 import { 
   getTmdbDetail, 
   getTmdbSeasonEpisodes, 
   getTmdbRecommendations, 
   getTmdbLogo,
-  getSynchronousKnownLogo 
+  getSynchronousKnownLogo,
+  getTmdbVideos,
+  getTmdbPerson
 } from '../services/tmdb';
+import { 
+  isMediaUnreleased, 
+  isFutureIsoDate, 
+  formatReleaseDate 
+} from '../services/availability';
 
 interface DetailModalProps {
   item: MediaItem | null;
@@ -30,6 +49,26 @@ interface DetailModalProps {
   onSelectRelated: (item: MediaItem) => void;
   onShowToast: (message: string) => void;
 }
+
+const buildInitialSeasons = (item: MediaItem | null): Season[] => {
+  if (!item) return [];
+  const total = Math.max(item.totalSeasons || 0, item.seasons?.length || 0, 1);
+  const existingMap = new Map<number, Season>();
+  (item.seasons || []).forEach((s) => existingMap.set(s.seasonNumber, s));
+  const list: Season[] = [];
+  for (let i = 1; i <= total; i++) {
+    const existing = existingMap.get(i);
+    list.push(
+      existing || {
+        seasonNumber: i,
+        title: `Season ${i}`,
+        episodeCount: 0,
+        episodes: [],
+      }
+    );
+  }
+  return list;
+};
 
 export const DetailModal: React.FC<DetailModalProps> = ({
   item,
@@ -44,26 +83,88 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   const initialResolvedLogo = item ? (item.logoUrl || getSynchronousKnownLogo(item)) : undefined;
   const initialActiveItem = item ? (initialResolvedLogo && !item.logoUrl ? { ...item, logoUrl: initialResolvedLogo } : item) : null;
   const [activeItem, setActiveItem] = useState<MediaItem | null>(initialActiveItem);
-  const [seasons, setSeasons] = useState<Season[]>(item?.seasons || []);
-  const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number>(1);
+  const [seasons, setSeasons] = useState<Season[]>(() => buildInitialSeasons(item));
+  const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number>(
+    item?.seasons?.[0]?.seasonNumber || 1
+  );
+  const [episodesBySeason, setEpisodesBySeason] = useState<Record<string, Episode[]>>({});
+  const [fetchedSeasons, setFetchedSeasons] = useState<Record<string, boolean>>({});
+  const fetchedKeysRef = useRef<Set<string>>(new Set());
   const [isLoadingSeasons, setIsLoadingSeasons] = useState<boolean>(false);
+  const [isLogoLoading, setIsLogoLoading] = useState<boolean>(Boolean(item && !initialResolvedLogo));
+  const [logoRetryDone, setLogoRetryDone] = useState<boolean>(false);
   const [tmdbRecommendations, setTmdbRecommendations] = useState<MediaItem[]>([]);
 
+  // Trailer state (for 3-second hero poster autoplay)
+  const [trailers, setTrailers] = useState<TrailerVideo[]>(item?.trailers || []);
+
+  // Hero poster 3-second trailer autoplay state
+  const HERO_AUTOPLAY_DELAY_MS = 3000;
+  const [heroTrailerActive, setHeroTrailerActive] = useState<boolean>(false);
+  const [heroTrailerConfirmed, setHeroTrailerConfirmed] = useState<boolean>(false);
+  const [heroTrailerMuted, setHeroTrailerMuted] = useState<boolean>(true);
+  const [heroTrailerBlocked, setHeroTrailerBlocked] = useState<boolean>(false);
+  const heroTimerRef = useRef<number | null>(null);
+  const heroFallbackTimerRef = useRef<number | null>(null);
+  const heroIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const titleOpenedAtRef = useRef<number>(Date.now());
+  const isStartingVidRiftRef = useRef<boolean>(false);
+
+  // Cast member details modal state
+  const [selectedCast, setSelectedCast] = useState<CastMember | null>(null);
+  const [personDetails, setPersonDetails] = useState<PersonDetails | null>(null);
+  const [isPersonLoading, setIsPersonLoading] = useState<boolean>(false);
+  const [personError, setPersonError] = useState<string | null>(null);
+  const [isBioExpanded, setIsBioExpanded] = useState<boolean>(false);
+
+  const cancelHeroTrailer = () => {
+    if (heroTimerRef.current !== null) {
+      window.clearTimeout(heroTimerRef.current);
+      heroTimerRef.current = null;
+    }
+    if (heroFallbackTimerRef.current !== null) {
+      window.clearTimeout(heroFallbackTimerRef.current);
+      heroFallbackTimerRef.current = null;
+    }
+    setHeroTrailerActive(false);
+    setHeroTrailerConfirmed(false);
+  };
+
+  // Reset and load details when item changes
   useEffect(() => {
+    titleOpenedAtRef.current = Date.now();
+    isStartingVidRiftRef.current = false;
+    cancelHeroTrailer();
+    setHeroTrailerMuted(true);
+    setHeroTrailerBlocked(false);
+
     if (!item) {
       setActiveItem(null);
+      setSeasons([]);
+      setIsLogoLoading(false);
+      setLogoRetryDone(false);
+      setTrailers([]);
+      setSelectedCast(null);
+      setPersonDetails(null);
       return;
     }
+
     const resolvedLogo = item.logoUrl || getSynchronousKnownLogo(item);
     setActiveItem(resolvedLogo && !item.logoUrl ? { ...item, logoUrl: resolvedLogo } : item);
     setTmdbRecommendations([]);
+    setLogoRetryDone(false);
+    setIsLogoLoading(!resolvedLogo);
 
-    if (item.seasons && item.seasons.length > 0) {
-      setSeasons(item.seasons);
-      setSelectedSeasonNumber(item.seasons[0].seasonNumber);
-    } else {
-      setSeasons([]);
-    }
+    // Reset trailer & cast dialog states cleanly
+    setTrailers(item.trailers || []);
+    setSelectedCast(null);
+    setPersonDetails(null);
+    setPersonError(null);
+    setIsBioExpanded(false);
+
+    const initialSeasonNum = item.seasons && item.seasons.length > 0 ? item.seasons[0].seasonNumber : 1;
+    setSeasons(buildInitialSeasons(item));
+    setSelectedSeasonNumber(initialSeasonNum);
 
     let isCancelled = false;
 
@@ -74,25 +175,65 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       const mediaType = isTv ? 'tv' : 'movie';
       const lookupId = item.tmdbId || item.id;
 
-      // 1. Fetch live TMDB details (which also includes images with logos)
-      getTmdbDetail(mediaType, lookupId).then((detailed) => {
+      // 1 & 2. Fetch live official graphic title logo + TMDB full details in parallel
+      const detailPromise = getTmdbDetail(mediaType, lookupId).then((detailed) => {
         if (!isCancelled && detailed) {
-          setActiveItem((prev) => prev ? { 
-            ...prev, 
-            ...detailed, 
-            logoUrl: detailed.logoUrl || prev.logoUrl || resolvedLogo 
-          } : detailed);
-        }
-      }).catch(() => {});
-
-      // 2. Fetch live official graphic title logo if not yet provided
-      if (!item.logoUrl && !resolvedLogo) {
-        getTmdbLogo(mediaType, lookupId).then((logoUrl) => {
-          if (!isCancelled && logoUrl) {
-            setActiveItem((prev) => prev ? { ...prev, logoUrl } : null);
+          setActiveItem((prev) => {
+            if (!prev) return detailed;
+            const mergedLogo = prev.logoUrl || detailed.logoUrl || resolvedLogo;
+            return {
+              ...prev,
+              ...detailed,
+              logoUrl: mergedLogo,
+            };
+          });
+          if (detailed.seasons && detailed.seasons.length > 0) {
+            setSeasons(detailed.seasons);
+            setSelectedSeasonNumber((curr) =>
+              detailed.seasons!.some((s) => s.seasonNumber === curr)
+                ? curr
+                : detailed.seasons![0].seasonNumber
+            );
           }
-        }).catch(() => {});
-      }
+          if (detailed.logoUrl) {
+            setIsLogoLoading(false);
+          }
+          if (detailed.trailers && detailed.trailers.length > 0) {
+            setTrailers(detailed.trailers);
+          }
+        }
+        return detailed;
+      }).catch(() => null);
+
+      const logoPromise = !resolvedLogo
+        ? getTmdbLogo(mediaType, lookupId).then((logoUrl) => {
+            if (!isCancelled && logoUrl) {
+              setActiveItem((prev) => (prev ? { ...prev, logoUrl } : null));
+              setIsLogoLoading(false);
+            }
+            return logoUrl;
+          }).catch(() => null)
+        : Promise.resolve(resolvedLogo);
+
+      // Fetch videos directly if detailPromise has none (covers non-English trailers or detail fallback)
+      detailPromise.then(async (detailed) => {
+        if (isCancelled) return;
+        if (detailed?.trailers && detailed.trailers.length > 0) return;
+
+        const videoRes = await getTmdbVideos(mediaType, lookupId);
+        if (isCancelled) return;
+        if (videoRes.videos.length > 0) {
+          setTrailers(videoRes.videos);
+        } else {
+          setTrailers([]);
+        }
+      });
+
+      Promise.allSettled([detailPromise, logoPromise]).then(() => {
+        if (!isCancelled) {
+          setIsLogoLoading(false);
+        }
+      });
 
       // 3. Fetch live TMDB recommendations
       getTmdbRecommendations(mediaType, lookupId).then((recs) => {
@@ -100,55 +241,226 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           setTmdbRecommendations(recs);
         }
       }).catch(() => {});
-
-      // 4. Fetch TV season episodes
-      if (isTv) {
-        setIsLoadingSeasons(true);
-        getTmdbSeasonEpisodes(item.id, selectedSeasonNumber).then((episodes) => {
-          if (!isCancelled && episodes.length > 0) {
-            setSeasons((prevSeasons) => {
-              if (prevSeasons.length > 0) {
-                return prevSeasons.map((s) => s.seasonNumber === selectedSeasonNumber ? { ...s, episodes } : s);
-              }
-              const totalSeas = item.totalSeasons || 1;
-              const newSeasons: Season[] = [];
-              for (let i = 1; i <= Math.max(totalSeas, 1); i++) {
-                newSeasons.push({
-                  seasonNumber: i,
-                  title: `Season ${i}`,
-                  episodeCount: i === selectedSeasonNumber ? episodes.length : 10,
-                  episodes: i === selectedSeasonNumber ? episodes : [],
-                });
-              }
-              return newSeasons;
-            });
-          }
-        }).catch(() => {}).finally(() => {
-          if (!isCancelled) setIsLoadingSeasons(false);
-        });
-      }
     }
 
     loadExtraDetails();
 
     return () => {
       isCancelled = true;
+      cancelHeroTrailer();
     };
   }, [item?.id]);
 
-  // Handle ESC key to close
+  // Schedule 3-second hero poster trailer autoplay; cancel immediately on close, title change, or VidRift start
+  const leadTrailerKey = trailers[0]?.key;
+
+  useEffect(() => {
+    if (heroTimerRef.current !== null) {
+      window.clearTimeout(heroTimerRef.current);
+      heroTimerRef.current = null;
+    }
+
+    if (
+      !item?.id ||
+      !leadTrailerKey ||
+      heroTrailerBlocked ||
+      isStartingVidRiftRef.current
+    ) {
+      return;
+    }
+
+    const elapsed = Date.now() - titleOpenedAtRef.current;
+    const remainingMs = Math.max(0, HERO_AUTOPLAY_DELAY_MS - elapsed);
+
+    let isCancelled = false;
+    heroTimerRef.current = window.setTimeout(() => {
+      if (isCancelled || isStartingVidRiftRef.current || document.hidden) return;
+      setHeroTrailerMuted(true);
+      setHeroTrailerConfirmed(false);
+      setHeroTrailerActive(true);
+    }, remainingMs);
+
+    return () => {
+      isCancelled = true;
+      if (heroTimerRef.current !== null) {
+        window.clearTimeout(heroTimerRef.current);
+        heroTimerRef.current = null;
+      }
+    };
+  }, [item?.id, leadTrailerKey, heroTrailerBlocked]);
+
+  // Verify YouTube playback started & keep poster visible if browser blocks autoplay or embed fails
+  useEffect(() => {
+    if (!heroTrailerActive || !leadTrailerKey) return;
+
+    let confirmedPlayback = false;
+
+    const handshakeInterval = window.setInterval(() => {
+      if (confirmedPlayback) return;
+      registerHeroYouTubeListeners();
+    }, 350);
+
+    heroFallbackTimerRef.current = window.setTimeout(() => {
+      if (!confirmedPlayback) {
+        setHeroTrailerActive(false);
+        setHeroTrailerConfirmed(false);
+        setHeroTrailerBlocked(true);
+      }
+    }, 5500);
+
+    const handleYouTubeMessage = (event: MessageEvent) => {
+      if (
+        event.origin !== 'https://www.youtube-nocookie.com' &&
+        event.origin !== 'https://www.youtube.com'
+      ) {
+        return;
+      }
+
+      let payload: any = null;
+      try {
+        payload = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+      if (!payload || typeof payload !== 'object') return;
+
+      if (payload.event === 'onError') {
+        window.clearInterval(handshakeInterval);
+        if (heroFallbackTimerRef.current !== null) {
+          window.clearTimeout(heroFallbackTimerRef.current);
+          heroFallbackTimerRef.current = null;
+        }
+        setHeroTrailerActive(false);
+        setHeroTrailerConfirmed(false);
+        setHeroTrailerBlocked(true);
+        return;
+      }
+
+      const playerState =
+        payload.event === 'onStateChange'
+          ? payload.info
+          : payload.event === 'infoDelivery'
+            ? payload.info?.playerState
+            : undefined;
+
+      if (playerState === 1) {
+        confirmedPlayback = true;
+        window.clearInterval(handshakeInterval);
+        if (heroFallbackTimerRef.current !== null) {
+          window.clearTimeout(heroFallbackTimerRef.current);
+          heroFallbackTimerRef.current = null;
+        }
+        setHeroTrailerConfirmed(true);
+      }
+
+      if (payload.event === 'infoDelivery' && typeof payload.info?.muted === 'boolean') {
+        setHeroTrailerMuted(payload.info.muted);
+      }
+    };
+
+    window.addEventListener('message', handleYouTubeMessage);
+    return () => {
+      window.clearInterval(handshakeInterval);
+      window.removeEventListener('message', handleYouTubeMessage);
+      if (heroFallbackTimerRef.current !== null) {
+        window.clearTimeout(heroFallbackTimerRef.current);
+        heroFallbackTimerRef.current = null;
+      }
+    };
+  }, [heroTrailerActive, leadTrailerKey]);
+
+  // Dedicated effect to always fetch live TMDB episodes for whichever season is selected
+  const currentIsTv = Boolean(
+    item && (item.type === 'series' || item.type === 'anime' || (item.type as any) === 'tv')
+  );
+
+  useEffect(() => {
+    if (!item || !currentIsTv) {
+      setIsLoadingSeasons(false);
+      return;
+    }
+
+    const cacheKey = `${item.id}:${selectedSeasonNumber}`;
+    if (fetchedKeysRef.current.has(cacheKey)) {
+      setIsLoadingSeasons(false);
+      return;
+    }
+
+    let isCancelled = false;
+    const lookupId = item.tmdbId || item.id;
+    setIsLoadingSeasons(true);
+
+    getTmdbSeasonEpisodes(lookupId, selectedSeasonNumber)
+      .then((episodes) => {
+        if (isCancelled) return;
+        fetchedKeysRef.current.add(cacheKey);
+        setFetchedSeasons((prev) => ({ ...prev, [cacheKey]: true }));
+        setEpisodesBySeason((prev) => ({ ...prev, [cacheKey]: episodes }));
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        setFetchedSeasons((prev) => ({ ...prev, [cacheKey]: true }));
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoadingSeasons(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [item?.id, item?.tmdbId, currentIsTv, selectedSeasonNumber]);
+
+  const handleCloseModal = () => {
+    cancelHeroTrailer();
+    onClose();
+  };
+
+  // Handle ESC key to close cast dialog first, then main detail modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (selectedCast) {
+          setSelectedCast(null);
+        } else {
+          handleCloseModal();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, selectedCast]);
 
   if (!activeItem) return null;
 
   const inWatchlist = isInWatchlist(activeItem.id);
   const selectedSeason = seasons.find((s) => s.seasonNumber === selectedSeasonNumber) || seasons[0];
+  const isTv = activeItem.type === 'series' || activeItem.type === 'anime' || (activeItem.type as any) === 'tv';
+  const isUnreleased = isMediaUnreleased(activeItem);
+  const formattedReleaseDate = formatReleaseDate(activeItem.releaseDate, activeItem.releaseYear);
+
+  // Key episode lookup cleanly by item + season so cross-item switches never leak stale data
+  const activeEpisodeKey = `${item?.id || activeItem.id}:${selectedSeasonNumber}`;
+  const liveSeasonEpisodes = episodesBySeason[activeEpisodeKey];
+  const hasFetchedSeason = Boolean(fetchedSeasons[activeEpisodeKey]);
+  const displayedEpisodes: Episode[] = hasFetchedSeason
+    ? (liveSeasonEpisodes || [])
+    : (selectedSeason?.episodes || []);
+
+  const hasFutureSeasonDate = Boolean(selectedSeason?.airDate) && isFutureIsoDate(selectedSeason?.airDate);
+  const allDisplayedEpisodesUnreleased =
+    displayedEpisodes.length > 0 && displayedEpisodes.every((ep) => isFutureIsoDate(ep.releaseDate));
+  const isEmptyUnannouncedSeason =
+    hasFetchedSeason &&
+    displayedEpisodes.length === 0 &&
+    (selectedSeason?.episodeCount === 0 || !selectedSeason?.airDate || hasFutureSeasonDate);
+
+  const isSelectedSeasonUnreleased =
+    isUnreleased ||
+    allDisplayedEpisodesUnreleased ||
+    (hasFutureSeasonDate && displayedEpisodes.length === 0) ||
+    isEmptyUnannouncedSeason;
+
+  const hideTopPlayButton = isUnreleased || (isTv && isSelectedSeasonUnreleased);
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -163,48 +475,152 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
   const handleSeasonChange = (newSeasonNumber: number) => {
     setSelectedSeasonNumber(newSeasonNumber);
-    const seasonObj = seasons.find((s) => s.seasonNumber === newSeasonNumber);
-    if (!seasonObj || seasonObj.episodes.length === 0) {
-      setIsLoadingSeasons(true);
-      getTmdbSeasonEpisodes(activeItem.id, newSeasonNumber).then((episodes) => {
-        if (episodes.length > 0) {
-          setSeasons((prev) => prev.map((s) => s.seasonNumber === newSeasonNumber ? { ...s, episodes, episodeCount: episodes.length } : s));
-        }
-      }).catch(() => {}).finally(() => setIsLoadingSeasons(false));
+  };
+
+  const handleLogoError = () => {
+    const brokenUrl = activeItem.logoUrl;
+    if (!logoRetryDone) {
+      setLogoRetryDone(true);
+      setIsLogoLoading(true);
+      const mediaType = isTv ? 'tv' : 'movie';
+      const lookupId = activeItem.tmdbId || activeItem.id;
+      getTmdbLogo(mediaType, lookupId, true)
+        .then((freshUrl) => {
+          setActiveItem((prev) => {
+            if (!prev) return null;
+            if (freshUrl && freshUrl !== brokenUrl) {
+              return { ...prev, logoUrl: freshUrl };
+            }
+            return { ...prev, logoUrl: undefined };
+          });
+        })
+        .catch(() => {
+          setActiveItem((prev) => (prev ? { ...prev, logoUrl: undefined } : null));
+        })
+        .finally(() => {
+          setIsLogoLoading(false);
+        });
+    } else {
+      setActiveItem((prev) => (prev ? { ...prev, logoUrl: undefined } : null));
+      setIsLogoLoading(false);
     }
   };
 
-  const isTv = activeItem.type === 'series' || activeItem.type === 'anime' || (activeItem.type as any) === 'tv';
+  const registerHeroYouTubeListeners = () => {
+    const win = heroIframeRef.current?.contentWindow;
+    if (!win) return;
+    try {
+      win.postMessage(
+        JSON.stringify({ event: 'listening', id: 'crator-hero-trailer' }),
+        'https://www.youtube-nocookie.com'
+      );
+      win.postMessage(
+        JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }),
+        'https://www.youtube-nocookie.com'
+      );
+      win.postMessage(
+        JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'] }),
+        'https://www.youtube-nocookie.com'
+      );
+    } catch {}
+  };
+
+  const handleToggleHeroMute = () => {
+    const nextMuted = !heroTrailerMuted;
+    setHeroTrailerMuted(nextMuted);
+    const win = heroIframeRef.current?.contentWindow;
+    if (!win) return;
+    try {
+      win.postMessage(
+        JSON.stringify({ event: 'command', func: nextMuted ? 'mute' : 'unMute', args: [] }),
+        'https://www.youtube-nocookie.com'
+      );
+      if (!nextMuted) {
+        win.postMessage(
+          JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+          'https://www.youtube-nocookie.com'
+        );
+        win.postMessage(
+          JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+          'https://www.youtube-nocookie.com'
+        );
+      }
+    } catch {}
+  };
 
   const handlePlayCurrent = (ep?: Episode) => {
+    if (isUnreleased) return;
     if (ep) {
+      if (isFutureIsoDate(ep.releaseDate)) return;
+      isStartingVidRiftRef.current = true;
+      cancelHeroTrailer();
       onPlay(activeItem, ep);
       return;
     }
     if (isTv) {
-      const currentSeasonObj = seasons.find((s) => s.seasonNumber === selectedSeasonNumber) || seasons[0];
-      const firstEp = currentSeasonObj?.episodes?.[0] || {
-        id: `${activeItem.id}-s${selectedSeasonNumber}e1`,
-        episodeNumber: 1,
-        seasonNumber: selectedSeasonNumber,
-        title: `Episode 1`,
-        runtime: '45m',
-        synopsis: activeItem.synopsis,
-        thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
-      };
-      onPlay(activeItem, firstEp);
+      if (isSelectedSeasonUnreleased) return;
+      const firstReleasedEp =
+        displayedEpisodes.find((e) => !isFutureIsoDate(e.releaseDate)) ||
+        (!hasFetchedSeason
+          ? {
+              id: `${activeItem.id}-s${selectedSeasonNumber}e1`,
+              episodeNumber: 1,
+              seasonNumber: selectedSeasonNumber,
+              title: `Episode 1`,
+              runtime: '45m',
+              synopsis: activeItem.synopsis,
+              thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
+            }
+          : undefined);
+      if (!firstReleasedEp) return;
+      isStartingVidRiftRef.current = true;
+      cancelHeroTrailer();
+      onPlay(activeItem, firstReleasedEp);
     } else {
+      isStartingVidRiftRef.current = true;
+      cancelHeroTrailer();
       onPlay(activeItem);
     }
+  };
+
+  const heroTrailer = trailers[0];
+
+  const loadPersonDetails = async (personId: number) => {
+    setIsPersonLoading(true);
+    setPersonError(null);
+    const res = await getTmdbPerson(personId);
+    if (res.person) {
+      setPersonDetails(res.person);
+      setPersonError(null);
+    } else {
+      setPersonDetails(null);
+      setPersonError(res.error || 'Unable to load cast member details right now.');
+    }
+    setIsPersonLoading(false);
+  };
+
+  const handleOpenCastMember = (member: CastMember) => {
+    setSelectedCast(member);
+    setPersonDetails(null);
+    setPersonError(null);
+    setIsBioExpanded(false);
+
+    if (!member.id) {
+      setIsPersonLoading(false);
+      setPersonError('Detailed biography is not available for this cast entry yet.');
+      return;
+    }
+
+    loadPersonDetails(member.id);
   };
 
   const mediaTypeLabel = isTv ? 'SERIES' : 'FILM';
   const ageRatingLabel = activeItem.ageRating || 'PG-13';
   const runtimeLabel = activeItem.runtime 
     ? activeItem.runtime.toUpperCase() 
-    : (activeItem.totalSeasons ? `${activeItem.totalSeasons} ${activeItem.totalSeasons === 1 ? 'SEASON' : 'SEASONS'}` : '2H 15M');
+    : (activeItem.totalSeasons ? `${activeItem.totalSeasons} ${activeItem.totalSeasons === 1 ? 'SEASON' : 'SEASONS'}` : 'FEATURE');
 
-  // Format title into stacked uppercase lines if multi-word as fallback
+  // Refined typographic fallback ONLY if TMDB has zero official logos
   const renderStackedTitle = () => {
     const titleWords = (activeItem.title || '').trim().split(' ');
     if (titleWords.length > 1 && titleWords.length <= 4) {
@@ -212,14 +628,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       const line1 = titleWords.slice(0, mid).join(' ');
       const line2 = titleWords.slice(mid).join(' ');
       return (
-        <h1 className="font-display font-black text-5xl sm:text-7xl md:text-8xl tracking-tight text-[#9fb8cf] uppercase leading-[0.92] drop-shadow-2xl">
+        <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
           <span className="block">{line1}</span>
           <span className="block">{line2}</span>
         </h1>
       );
     }
     return (
-      <h1 className="font-display font-black text-5xl sm:text-7xl md:text-8xl tracking-tight text-[#9fb8cf] uppercase leading-[0.92] drop-shadow-2xl">
+      <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
         {activeItem.title}
       </h1>
     );
@@ -230,82 +646,139 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     ? activeItem.genres.slice(0, 3).map((g) => g.toUpperCase()).join('   /   ')
     : 'ACTION   /   ADVENTURE   /   SCI-FI';
 
-  const castMembers = activeItem.cast || [
-    { name: 'Robert Downey Jr.', character: 'Tony Stark', avatar: 'https://image.tmdb.org/t/p/w185/5qHNjhtjMD4YWH3ag0.jpg' },
-    { name: 'Gwyneth Paltrow', character: 'Pepper Potts', avatar: 'https://image.tmdb.org/t/p/w185/v3f8J7.jpg' },
-    { name: 'Terrence Howard', character: 'James Rhodes', avatar: 'https://image.tmdb.org/t/p/w185/57M77i.jpg' },
-    { name: 'Jeff Bridges', character: 'Obadiah Stane', avatar: 'https://image.tmdb.org/t/p/w185/x7Xb7c.jpg' }
-  ];
-
-  const directorName = activeItem.director || 'Christopher Nolan';
+  const castMembers = Array.isArray(activeItem.cast) ? activeItem.cast : [];
+  const directorName = activeItem.director;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black text-[#f3f0ea] select-none animate-fadeIn">
-      {/* 1. Top-Left Circular Glass Back Button (exact match to screenshots) */}
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#040508] text-[#f3f0ea] select-none animate-fadeIn">
+      {/* 1. Top-Left Circular Glass Back Button */}
       <button
-        onClick={onClose}
-        className="fixed top-6 left-6 z-50 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 backdrop-blur-md flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xl"
+        type="button"
+        onClick={handleCloseModal}
+        className="glass-control fixed top-6 left-6 z-50 w-11 h-11 rounded-full flex items-center justify-center text-white/95 hover:text-white hover:scale-105 active:scale-95 cursor-pointer"
         aria-label="Back"
         title="Back (Esc)"
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
 
-      {/* 2. Hero Section with Full-Bleed Cinematic Backdrop */}
+      {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
       <div className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden">
-        {/* Full-Bleed Backdrop Image */}
-        <div className="absolute inset-0 z-0">
-          <ImageWithFallback
-            src={activeItem.backdropUrl || activeItem.posterUrl}
-            fallbackSrc={activeItem.fallbackBackdropUrl || activeItem.fallbackPosterUrl}
-            alt={activeItem.title}
-            fallbackTitle={activeItem.title}
-            containerClassName="w-full h-full"
-            className="w-full h-full object-cover object-[center_15%] sm:object-[center_12%] filter brightness-[0.92]"
-          />
+        {/* Full-Bleed Poster / Trailer Media Layer */}
+        <div className="absolute inset-0 z-0 overflow-hidden" data-hero-poster-area="true">
+          {/* Embedded Auto-Playing Trailer (renders underneath poster until playback is confirmed) */}
+          {heroTrailerActive && heroTrailer && !heroTrailerBlocked && (
+            <div
+              className={`absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-700 ${
+                heroTrailerConfirmed ? 'opacity-100' : 'opacity-0'
+              }`}
+              data-hero-trailer-player="true"
+            >
+              <iframe
+                ref={heroIframeRef}
+                id="crator-hero-trailer-iframe"
+                key={`${activeItem.id}-${heroTrailer.key}`}
+                src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(heroTrailer.key)}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${encodeURIComponent(heroTrailer.key)}&enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                title={`${activeItem.title} trailer preview`}
+                onLoad={() => {
+                  registerHeroYouTubeListeners();
+                  window.setTimeout(registerHeroYouTubeListeners, 250);
+                }}
+                className="w-full h-full scale-[1.38] sm:scale-[1.42] origin-center border-0 pointer-events-none"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                referrerPolicy="strict-origin-when-cross-origin"
+                tabIndex={-1}
+              />
+            </div>
+          )}
 
-          {/* Gradients matching screenshots: left vignette and bottom fade leaving upper 65% bright */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent w-full md:w-3/5 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 via-35% to-transparent h-full pointer-events-none" />
-          <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/75 to-transparent pointer-events-none" />
+          {/* Poster / Backdrop Image (stays visible until trailer playback starts or when unavailable/blocked) */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100'
+            }`}
+            data-hero-poster-fallback="true"
+          >
+            <ImageWithFallback
+              src={activeItem.backdropUrl || activeItem.posterUrl}
+              fallbackSrc={activeItem.fallbackBackdropUrl || activeItem.fallbackPosterUrl}
+              alt={activeItem.title}
+              fallbackTitle={activeItem.title}
+              containerClassName="w-full h-full"
+              className="w-full h-full object-cover object-[center_15%] sm:object-[center_12%]"
+            />
+          </div>
+
+          {/* Subtle Cinematic Gradients */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent w-full md:w-1/2 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-22% to-transparent h-full pointer-events-none" />
+          <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-black/35 to-transparent pointer-events-none" />
         </div>
 
-        {/* Hero Content Block positioned lower to keep poster/characters visible */}
+        {/* Visible Hero Trailer Mute / Unmute Control */}
+        {heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked && (
+          <button
+            type="button"
+            onClick={handleToggleHeroMute}
+            data-hero-mute-toggle="true"
+            aria-label={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
+            title={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
+            className="glass-control absolute top-6 right-6 z-20 h-11 px-4 rounded-full flex items-center gap-2 text-xs font-semibold text-white hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            {heroTrailerMuted ? (
+              <>
+                <VolumeX className="w-4 h-4 text-[#f3f0ea]" />
+                <span>Unmute</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+                <span>Mute</span>
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Hero Content Block */}
         <div className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-6 sm:pb-8 pt-44 sm:pt-60 md:pt-72 space-y-2.5 sm:space-y-3">
-          {/* Kicker Row: — FILM · 2026 · [ R ] · 2H 53M or — SERIES · 2026 · TV-14 · 1 SEASON */}
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
+          {/* Kicker Row */}
+          <div className="flex items-center flex-wrap gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
             <span className="text-white/50 text-base leading-none select-none">—</span>
             <span className="uppercase">{mediaTypeLabel}</span>
             <span className="text-white/40">·</span>
-            <span>{activeItem.releaseYear || 2026}</span>
+            <span>{activeItem.releaseDate ? formattedReleaseDate.toUpperCase() : (activeItem.releaseYear || 2026)}</span>
             <span className="text-white/40">·</span>
-            <span className="px-1.5 py-0.5 rounded border border-white/30 text-[10px] font-mono font-bold uppercase tracking-widest bg-black/30">
+            <span className="glass-badge px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest">
               {ageRatingLabel}
             </span>
             <span className="text-white/40">·</span>
             <span className="uppercase">{runtimeLabel}</span>
           </div>
 
-          {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) OR STYLED TITLE */}
-          <div className="py-0.5">
+          {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) */}
+          <div className="py-0.5 min-h-[68px] sm:min-h-[84px] flex items-center">
             {activeItem.logoUrl ? (
               <div className="py-1 max-w-xs sm:max-w-sm md:max-w-md">
                 <img
                   src={activeItem.logoUrl}
                   alt={activeItem.title}
                   className="max-h-16 sm:max-h-20 md:max-h-24 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] select-none"
-                  onError={() => {
-                    // Graceful fallback to text if logo image is unavailable
-                    setActiveItem((prev) => prev ? { ...prev, logoUrl: undefined } : null);
-                  }}
+                  onError={handleLogoError}
                 />
               </div>
+            ) : isLogoLoading ? (
+              <div
+                className="h-14 sm:h-16 md:h-20 w-52 sm:w-64 rounded-xl bg-white/10 animate-pulse"
+                aria-label={`Loading logo for ${activeItem.title}`}
+              />
             ) : (
               renderStackedTitle()
             )}
           </div>
 
-          {/* Genres row: ADVENTURE / ACTION / FANTASY */}
+          {/* Genres row */}
           <div className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
             {genresRow}
           </div>
@@ -316,83 +789,82 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </p>
 
           {/* Directed by / Created by line */}
-          <div className="flex items-center gap-2 pt-0.5 text-xs">
-            <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
-              {isTv ? 'CREATED BY' : 'DIRECTED BY'}
-            </span>
-            <span className="font-semibold text-white ml-1">
-              {directorName}
-            </span>
-          </div>
+          {directorName && (
+            <div className="flex items-center gap-2 pt-0.5 text-xs">
+              <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
+                {isTv ? 'CREATED BY' : 'DIRECTED BY'}
+              </span>
+              <span className="font-semibold text-white ml-1">
+                {directorName}
+              </span>
+            </div>
+          )}
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-2.5 pt-2 flex-wrap">
-            {/* White Primary Play / Resume Button */}
-            <button
-              onClick={() => handlePlayCurrent()}
-              className="bg-white text-black hover:bg-neutral-100 font-bold px-7 py-3 rounded-xl flex items-center gap-2.5 text-sm transition-all shadow-xl active:scale-95 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-black text-black" />
-              <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
-            </button>
+            {hideTopPlayButton ? (
+              <div
+                className="glass-panel text-[#f3f0ea] font-semibold px-5 py-3 rounded-xl flex items-center gap-2.5 text-sm"
+                data-unreleased-release-date="true"
+              >
+                <Calendar className="w-4 h-4 text-[#c9c7cc]" />
+                <span>
+                  {!isUnreleased && isTv
+                    ? `Season ${selectedSeasonNumber} Release Date: ${
+                        selectedSeason?.airDate
+                          ? formatReleaseDate(selectedSeason.airDate)
+                          : displayedEpisodes[0]?.releaseDate
+                            ? formatReleaseDate(displayedEpisodes[0].releaseDate)
+                            : 'TBA'
+                      }`
+                    : `Release Date: ${formattedReleaseDate}`}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handlePlayCurrent()}
+                className="primary-btn h-11 px-7 rounded-xl text-sm font-bold"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
+              </button>
+            )}
 
             {/* Plus / Watchlist Button */}
             <button
+              type="button"
               onClick={() => onToggleWatchlist(activeItem)}
-              className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer"
+              className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
               title={inWatchlist ? 'In Watchlist' : 'Add to List'}
+              aria-label={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
               {inWatchlist ? <Check className="w-5 h-5 text-emerald-400" /> : <Plus className="w-5 h-5" />}
             </button>
 
             {/* Share Button */}
             <button
+              type="button"
               onClick={handleShare}
-              className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer"
+              className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
               title="Share"
+              aria-label="Share title"
             >
               <Share2 className="w-4 h-4" />
             </button>
 
-            {/* Download Button */}
-            <button
-              onClick={handleDownload}
-              className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer"
-              title="Download offline stream"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Promo Banner Card: Always find 7Movies / 7domains.fans */}
-          <div className="pt-1">
-            <div 
-              onClick={handleShare}
-              className="relative rounded-2xl bg-[#141418]/85 hover:bg-[#1a1a20] border border-white/15 hover:border-white/30 p-3.5 max-w-md flex items-center justify-between backdrop-blur-md transition-all cursor-pointer shadow-xl group overflow-hidden"
-            >
-              {/* Subtle background thumbnail snippet */}
-              <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-20 pointer-events-none overflow-hidden">
-                <ImageWithFallback
-                  src={activeItem.backdropUrl || activeItem.posterUrl}
-                  alt="promo"
-                  containerClassName="w-full h-full"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="relative z-10 text-left">
-                <h4 className="text-sm font-bold text-white leading-tight">
-                  Always find 7Movies
-                </h4>
-                <p className="text-xs text-[#8e8a91] font-mono mt-0.5">
-                  7domains.fans
-                </p>
-              </div>
-
-              <div className="relative z-10 text-white/70 group-hover:text-white transition-colors">
-                <ExternalLink className="w-4 h-4" />
-              </div>
-            </div>
+            {/* Download Button (only when released) */}
+            {!hideTopPlayButton && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                title="Download offline stream"
+                aria-label="Download offline stream"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -400,7 +872,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       {/* 3. CONTENT SECTIONS */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 pt-8 pb-16 space-y-12">
         {/* ================================================================= */}
-        {/* FOR TV SERIES: CONTINUE THE STORY / Episodes (exact match to VisionQuest Screenshot 1) */}
+        {/* FOR TV SERIES: CONTINUE THE STORY / Episodes */}
         {/* ================================================================= */}
         {isTv && (
           <div className="space-y-6">
@@ -417,159 +889,215 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 </h2>
               </div>
 
-              {/* Season Dropdown Selector on Right (exact match to VisionQuest screenshot) */}
+              {/* Season Selector Controls */}
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-mono tracking-widest text-[#8e8a91] uppercase mb-1">
                   SEASON
                 </span>
-                <div className="relative">
-                  <select
-                    value={selectedSeasonNumber}
-                    onChange={(e) => handleSeasonChange(Number(e.target.value))}
-                    className="appearance-none bg-[#141316] border border-white/20 hover:border-white/40 rounded-xl px-4 py-2 pr-9 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer transition-all shadow-lg"
-                  >
-                    {seasons.map((s) => (
-                      <option key={s.seasonNumber} value={s.seasonNumber} className="bg-[#141316] text-white">
-                        {s.title}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-[#beb9bc] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="relative z-20 flex items-center gap-2 flex-wrap justify-end">
+                  {seasons.length > 1 && seasons.length <= 8 && (
+                    <div className="flex items-center gap-1.5 mr-1 flex-wrap">
+                      {seasons.map((s) => (
+                        <button
+                          key={`pill-${s.seasonNumber}`}
+                          type="button"
+                          aria-pressed={selectedSeasonNumber === s.seasonNumber}
+                          onClick={() => handleSeasonChange(s.seasonNumber)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer ${
+                            selectedSeasonNumber === s.seasonNumber
+                              ? 'glass-pill-active'
+                              : 'glass-pill text-[#c9c7cc]'
+                          }`}
+                        >
+                          S{s.seasonNumber}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="relative">
+                    <select
+                      value={selectedSeasonNumber}
+                      onChange={(e) => handleSeasonChange(Number(e.target.value))}
+                      aria-label="Select season"
+                      className="glass-control appearance-none rounded-full px-4 py-2 pr-9 text-xs font-semibold text-white cursor-pointer"
+                    >
+                      {seasons.map((s) => (
+                        <option key={s.seasonNumber} value={s.seasonNumber} className="bg-[#0e1118] text-white">
+                          {s.title || `Season ${s.seasonNumber}`}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-[#c9c7cc] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Episodes List / Grid */}
-            {selectedSeason && selectedSeason.episodes.length > 0 ? (
+            {/* Episodes List / Loading / Unreleased State */}
+            {isLoadingSeasons && displayedEpisodes.length === 0 ? (
               <div className="space-y-3">
-                {selectedSeason.episodes.map((ep) => (
+                {[1, 2, 3].map((idx) => (
                   <div
-                    key={ep.id}
-                    onClick={() => onPlay(activeItem, ep)}
-                    className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-2xl bg-[#121114] hover:bg-[#1a191e] border border-white/10 hover:border-white/25 transition-all cursor-pointer"
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative aspect-video w-full sm:w-44 rounded-xl overflow-hidden shrink-0 bg-[#0a0a0c]">
-                      <ImageWithFallback
-                        src={ep.thumbnail || activeItem.backdropUrl || activeItem.posterUrl}
-                        alt={ep.title}
-                        fallbackTitle={ep.title}
-                        containerClassName="w-full h-full"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-colors">
-                        <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
-                          <Play className="w-4 h-4 fill-black ml-0.5" />
-                        </div>
-                      </div>
-                      <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-mono text-white">
-                        {ep.runtime}
-                      </span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 space-y-1 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-[#beb9bc]">
-                          Episode {ep.episodeNumber}
-                        </span>
-                        <span className="text-white/30">·</span>
-                        <h4 className="font-semibold text-sm text-white group-hover:text-emerald-400 transition-colors">
-                          {ep.title}
-                        </h4>
-                      </div>
-                      <p className="text-xs text-[#8e8a91] line-clamp-2">
-                        {ep.synopsis || 'Full episode stream ready via VidRift player.'}
-                      </p>
-                    </div>
-
-                    <div className="hidden sm:block shrink-0">
-                      <button className="px-3.5 py-2 rounded-xl bg-white/10 group-hover:bg-white group-hover:text-black text-white text-xs font-bold transition-all">
-                        Stream
-                      </button>
-                    </div>
-                  </div>
+                    key={`ep-skel-${idx}`}
+                    className="glass-surface h-28 rounded-2xl animate-pulse"
+                  />
                 ))}
               </div>
-            ) : (
-              /* Quick Episode Grid */
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((epNum) => (
-                  <button
-                    key={`quick-ep-${epNum}`}
-                    onClick={() =>
-                      onPlay(activeItem, {
-                        id: `${activeItem.id}-s${selectedSeasonNumber}e${epNum}`,
-                        episodeNumber: epNum,
-                        seasonNumber: selectedSeasonNumber,
-                        title: `Episode ${epNum}`,
-                        runtime: '48m',
-                        synopsis: activeItem.synopsis,
-                        thumbnail: activeItem.backdropUrl || activeItem.posterUrl,
-                      })
-                    }
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#121114] hover:bg-white hover:text-black border border-white/10 transition-all text-left group cursor-pointer"
-                  >
-                    <div>
-                      <span className="text-xs font-bold text-white group-hover:text-black block">
-                        Episode {epNum}
-                      </span>
-                      <span className="text-[10px] font-mono text-[#8e8a91] group-hover:text-neutral-700">
-                        Season {selectedSeasonNumber}
-                      </span>
+            ) : displayedEpisodes.length > 0 ? (
+              <div className="space-y-3">
+                {displayedEpisodes.map((ep) => {
+                  const epUnreleased = isUnreleased || isFutureIsoDate(ep.releaseDate);
+                  return (
+                    <div
+                      key={ep.id}
+                      onClick={() => {
+                        if (!epUnreleased) handlePlayCurrent(ep);
+                      }}
+                      onKeyDown={(e) => {
+                        if (!epUnreleased && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          handlePlayCurrent(ep);
+                        }
+                      }}
+                      role={epUnreleased ? undefined : 'button'}
+                      tabIndex={epUnreleased ? undefined : 0}
+                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-2xl ${
+                        epUnreleased
+                          ? 'opacity-80 cursor-default'
+                          : 'glass-hover cursor-pointer'
+                      }`}
+                    >
+                      {/* Thumbnail */}
+                      <div className="relative aspect-video w-full sm:w-44 rounded-xl overflow-hidden shrink-0 bg-[#0a0c12] border border-white/10">
+                        <ImageWithFallback
+                          src={ep.thumbnail || activeItem.backdropUrl || activeItem.posterUrl}
+                          alt={ep.title}
+                          fallbackTitle={ep.title}
+                          containerClassName="w-full h-full"
+                          className={`w-full h-full object-cover ${epUnreleased ? '' : 'group-hover:scale-105'} transition-transform duration-300`}
+                        />
+                        {!epUnreleased && (
+                          <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                            <div className="w-9 h-9 rounded-full glass-pill-active flex items-center justify-center shadow-lg">
+                              <Play className="w-4 h-4 fill-current ml-0.5" />
+                            </div>
+                          </div>
+                        )}
+                        <span className="glass-badge absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono text-white">
+                          {epUnreleased && ep.releaseDate ? formatReleaseDate(ep.releaseDate) : ep.runtime}
+                        </span>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 space-y-1 text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono font-bold text-[#c9c7cc]">
+                            Episode {ep.episodeNumber}
+                          </span>
+                          <span className="text-white/30">·</span>
+                          <h4 className={`font-semibold text-sm text-white ${epUnreleased ? '' : 'group-hover:text-emerald-300'} transition-colors`}>
+                            {ep.title}
+                          </h4>
+                          {ep.releaseDate && (
+                            <span className="text-[11px] font-mono text-[#8a8890]">
+                              · {formatReleaseDate(ep.releaseDate)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#9a9ba1] line-clamp-2">
+                          {ep.synopsis || (epUnreleased ? `Scheduled to air ${formatReleaseDate(ep.releaseDate)}.` : 'Full episode stream ready via VidRift player.')}
+                        </p>
+                      </div>
+
+                      <div className="hidden sm:block shrink-0">
+                        {epUnreleased ? (
+                          <span className="glass-badge px-3.5 py-2 rounded-full text-[#c9c7cc] text-xs font-mono">
+                            {ep.releaseDate ? `Airs ${formatReleaseDate(ep.releaseDate)}` : 'Coming Soon'}
+                          </span>
+                        ) : (
+                          <span className="glass-pill inline-flex items-center px-4 py-2 rounded-full group-hover:!bg-white group-hover:!text-[#0b0d12] text-white text-xs font-bold transition-all">
+                            Stream
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <Play className="w-3.5 h-3.5 text-white/70 group-hover:text-black fill-current" />
-                  </button>
-                ))}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="glass-panel rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
+                <div className="space-y-1 text-left">
+                  <p className="text-sm font-semibold text-white">
+                    {isSelectedSeasonUnreleased
+                      ? `Season ${selectedSeasonNumber} is not released yet`
+                      : `No episodes listed for Season ${selectedSeasonNumber} yet`}
+                  </p>
+                  <p className="text-xs text-[#9a9ba1] font-mono">
+                    {selectedSeason?.airDate
+                      ? `Release Date: ${formatReleaseDate(selectedSeason.airDate)}`
+                      : (activeItem.releaseDate ? `Release Date: ${formattedReleaseDate}` : 'Release schedule to be announced')}
+                  </p>
+                </div>
+                <Calendar className="w-5 h-5 text-[#9a9ba1]" />
               </div>
             )}
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* FEATURING & Cast Section (exact match to screenshots 1, 2, and 3) */}
+        {/* FEATURING & Cast Section */}
         {/* ================================================================= */}
-        <div className="space-y-6">
-          <div className="space-y-1">
-            <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase flex items-center gap-2">
-              <span className="text-white/50">—</span>
-              <span>FEATURING</span>
-            </span>
-            <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
-              <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-                Cast
-              </h2>
-              <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase">
-                {castMembers.length} CREDITED
+        {castMembers.length > 0 && (
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase flex items-center gap-2">
+                <span className="text-white/50">—</span>
+                <span>FEATURING</span>
               </span>
+              <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
+                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+                  Cast
+                </h2>
+                <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase">
+                  {castMembers.length} CREDITED · CLICK FOR BIO
+                </span>
+              </div>
+            </div>
+
+            {/* Cast Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {castMembers.map((member, idx) => (
+                <button
+                  key={`${member.id || member.name}-${idx}`}
+                  type="button"
+                  onClick={() => handleOpenCastMember(member)}
+                  data-cast-card="true"
+                  aria-label={`View details for ${member.name}`}
+                  className="glass-surface glass-hover flex flex-col items-start gap-2.5 p-3 rounded-2xl group cursor-pointer text-left"
+                >
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/20 shadow-md">
+                    <ImageWithFallback
+                      src={member.avatar}
+                      alt={member.name}
+                      fallbackTitle={member.name}
+                      containerClassName="w-full h-full rounded-full"
+                      isAvatar={true}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <div className="w-full text-left space-y-0.5">
+                    <h4 className="font-semibold text-xs text-white group-hover:text-emerald-300 transition-colors truncate flex items-center justify-between gap-1">
+                      <span className="truncate">{member.name}</span>
+                      <ChevronRight className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </h4>
+                    <p className="text-[11px] text-[#9a9ba1] truncate font-mono">{member.character}</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
-
-          {/* Cast Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {castMembers.map((member) => (
-              <div 
-                key={member.name}
-                className="flex flex-col items-start gap-2.5 p-3 rounded-2xl bg-[#121114] border border-white/10 hover:border-white/20 transition-all group"
-              >
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/15 shadow-md">
-                  <ImageWithFallback
-                    src={member.avatar}
-                    alt={member.name}
-                    fallbackTitle={member.name}
-                    containerClassName="w-full h-full rounded-full"
-                    isAvatar={true}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                </div>
-                <div className="w-full text-left">
-                  <h4 className="font-semibold text-xs text-white truncate">{member.name}</h4>
-                  <p className="text-[11px] text-[#8e8a91] truncate font-mono">{member.character}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* ================================================================= */}
         {/* Recommendations ("More Like This") */}
@@ -578,47 +1106,227 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           <div className="space-y-6 pt-6 border-t border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-1">
+                <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase block mb-1">
                   RECOMMENDATIONS
                 </span>
                 <h3 className="font-display font-bold text-2xl text-white">
                   More Like This
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#8e8a91]">
+              <span className="text-xs font-mono text-[#9a9ba1]">
                 Powered by TMDB
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
               {(tmdbRecommendations.length > 0 ? tmdbRecommendations : relatedItems).slice(0, 6).map((rel) => (
-                <div
+                <button
                   key={rel.id}
+                  type="button"
                   onClick={() => onSelectRelated(rel)}
-                  className="group relative flex flex-col cursor-pointer"
+                  className="group relative flex flex-col cursor-pointer text-left"
                 >
-                  <div className="aspect-[2/3] rounded-xl overflow-hidden bg-[#141316] border border-white/10 group-hover:border-white/30 transition-all">
+                  <div className="poster w-full">
                     <ImageWithFallback
                       src={rel.posterUrl}
                       fallbackSrc={rel.fallbackPosterUrl}
                       alt={rel.title}
                       fallbackTitle={rel.title}
                       containerClassName="w-full h-full"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <h4 className="font-semibold text-xs text-white group-hover:text-emerald-400 transition-colors truncate mt-2 text-left">
+                  <h4 className="font-semibold text-xs text-white group-hover:text-emerald-300 transition-colors truncate mt-2 text-left w-full">
                     {rel.title}
                   </h4>
-                  <span className="text-[11px] text-[#8e8a91] text-left">
+                  <span className="text-[11px] text-[#9a9ba1] text-left">
                     {rel.releaseYear} · {rel.type === 'movie' ? 'Film' : 'TV'}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* ================================================================= */}
+      {/* Cast Member Biography & Known-For Dialog */}
+      {/* ================================================================= */}
+      {selectedCast && (
+        <div
+          className="glass-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 animate-fadeIn"
+          onClick={() => setSelectedCast(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedCast.name} details`}
+        >
+          <div
+            className="glass-panel relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl p-6 sm:p-8 space-y-6 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCast(null)}
+              aria-label="Close cast details"
+              className="glass-control absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Top Profile Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pr-8">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-white/10 border border-white/15 shrink-0 shadow-lg">
+                <ImageWithFallback
+                  src={personDetails?.profileUrl || selectedCast.avatar}
+                  alt={personDetails?.name || selectedCast.name}
+                  fallbackTitle={personDetails?.name || selectedCast.name}
+                  containerClassName="w-full h-full"
+                  isAvatar={true}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="space-y-2 flex-1">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#8e8a91] block">
+                  {personDetails?.knownForDepartment || 'Acting'} · In {activeItem.title} as {selectedCast.character}
+                </span>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                  {personDetails?.name || selectedCast.name}
+                </h3>
+
+                {(personDetails?.birthday || personDetails?.placeOfBirth) && (
+                  <div className="flex items-center flex-wrap gap-3 text-xs text-[#beb9bc] pt-0.5">
+                    {personDetails.birthday && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#8e8a91]" />
+                        <span>
+                          Born {formatReleaseDate(personDetails.birthday)}
+                          {personDetails.deathday ? ` – ${formatReleaseDate(personDetails.deathday)}` : ''}
+                        </span>
+                      </span>
+                    )}
+                    {personDetails.placeOfBirth && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#8e8a91]" />
+                        <span>{personDetails.placeOfBirth}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Biography Section */}
+            <div className="space-y-2.5 pt-2 border-t border-white/10">
+              <h4 className="text-xs font-mono uppercase tracking-widest text-[#8e8a91]">
+                Biography
+              </h4>
+
+              {isPersonLoading ? (
+                <div className="space-y-2 animate-pulse">
+                  <div className="h-3.5 bg-white/10 rounded w-full" />
+                  <div className="h-3.5 bg-white/10 rounded w-11/12" />
+                  <div className="h-3.5 bg-white/10 rounded w-4/5" />
+                </div>
+              ) : personError ? (
+                <div className="glass-surface rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-[#c9c7cc]">{personError}</p>
+                  {selectedCast.id && (
+                    <button
+                      type="button"
+                      onClick={() => loadPersonDetails(selectedCast.id!)}
+                      className="glass-pill px-3.5 py-1.5 rounded-full text-white text-xs font-semibold cursor-pointer"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
+              ) : personDetails?.biography ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-[#d3d1d6] leading-relaxed whitespace-pre-line">
+                    {isBioExpanded || personDetails.biography.length <= 360
+                      ? personDetails.biography
+                      : `${personDetails.biography.slice(0, 360).trimEnd()}...`}
+                  </p>
+                  {personDetails.biography.length > 360 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsBioExpanded((prev) => !prev)}
+                      className="text-xs font-semibold text-white hover:text-emerald-300 transition-colors cursor-pointer"
+                    >
+                      {isBioExpanded ? 'Show less' : 'Read full biography'}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-[#9a9ba1] italic">
+                  No biography available for {personDetails?.name || selectedCast.name} on TMDB.
+                </p>
+              )}
+            </div>
+
+            {/* Known For Section */}
+            {!personError && (
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-mono uppercase tracking-widest text-[#9a9ba1]">
+                    Known For
+                  </h4>
+                  {personDetails && personDetails.knownFor.length > 0 && (
+                    <span className="text-[11px] font-mono text-[#8a8890]">
+                      {personDetails.knownFor.length} TITLES
+                    </span>
+                  )}
+                </div>
+
+                {isPersonLoading ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[1, 2, 3, 4].map((idx) => (
+                      <div key={`kf-skel-${idx}`} className="aspect-[2/3] rounded-xl glass-surface animate-pulse" />
+                    ))}
+                  </div>
+                ) : personDetails && personDetails.knownFor.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                    {personDetails.knownFor.map((credit) => (
+                      <button
+                        key={`${credit.mediaType}-${credit.id}`}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCast(null);
+                          onSelectRelated(credit.mediaItem);
+                        }}
+                        className="group flex flex-col text-left cursor-pointer"
+                      >
+                        <div className="poster w-full">
+                          <ImageWithFallback
+                            src={credit.posterUrl}
+                            fallbackSrc={credit.backdropUrl}
+                            alt={credit.title}
+                            fallbackTitle={credit.title}
+                            containerClassName="w-full h-full"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <span className="font-semibold text-xs text-white group-hover:text-emerald-300 transition-colors truncate mt-2 w-full">
+                          {credit.title}
+                        </span>
+                        <span className="text-[11px] text-[#8e8a91] truncate w-full">
+                          {credit.releaseYear} · {credit.mediaType === 'movie' ? 'Film' : 'TV'}
+                          {credit.character ? ` · ${credit.character}` : ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#8e8a91]">
+                    No credited movies or TV shows listed on TMDB.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

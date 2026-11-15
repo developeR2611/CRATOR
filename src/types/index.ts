@@ -9,9 +9,46 @@ export type StreamingPlatform =
   | 'Paramount+';
 
 export interface CastMember {
+  id?: number;
   name: string;
   character: string;
   avatar: string;
+}
+
+export interface TrailerVideo {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official: boolean;
+  publishedAt?: string;
+  iso6391?: string;
+}
+
+export interface PersonKnownForItem {
+  id: number;
+  mediaType: 'movie' | 'tv';
+  title: string;
+  posterUrl: string;
+  backdropUrl?: string;
+  releaseYear: number;
+  releaseDate?: string;
+  character?: string;
+  voteAverage?: number;
+  mediaItem: MediaItem;
+}
+
+export interface PersonDetails {
+  id: number;
+  name: string;
+  biography: string;
+  birthday?: string;
+  deathday?: string;
+  placeOfBirth?: string;
+  knownForDepartment?: string;
+  profileUrl: string;
+  knownFor: PersonKnownForItem[];
 }
 
 export interface Episode {
@@ -30,6 +67,7 @@ export interface Season {
   seasonNumber: number;
   title: string;
   episodeCount: number;
+  airDate?: string;
   episodes: Episode[];
 }
 
@@ -46,6 +84,8 @@ export interface MediaItem {
   rating: number; // e.g. 8.8
   voteCount: string; // e.g. "245K"
   releaseYear: number;
+  releaseDate?: string; // YYYY-MM-DD from TMDB
+  tmdbStatus?: string; // e.g. "Released", "Post Production", "In Production", "Planned"
   runtime?: string; // for movies: "2h 46m"
   totalSeasons?: number; // for series: 4
   ageRating: string; // "TV-MA", "PG-13", "16+", "18+"
@@ -57,6 +97,7 @@ export interface MediaItem {
   language: string;
   director?: string;
   cast: CastMember[];
+  trailers?: TrailerVideo[];
   seasons?: Season[];
   videoUrl?: string;
   topTenRank?: number; // 1-10 if in top ten
