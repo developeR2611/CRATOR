@@ -229,7 +229,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
         <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-4 mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-3">
           <span className="dz-count text-[#c9c7cc] flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71] shadow-[0_0_8px_#2FBF71]" />
-            <span>{filteredItems.length} verified titles available on VidRift</span>
+            <span>{filteredItems.length} titles ready to stream</span>
           </span>
 
           <span className="dz-bar-actions">

@@ -245,7 +245,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
           <span>Search</span>
         </h1>
         <p className="text-xs text-[#8e8a91] mt-1 font-mono">
-          Search live across millions of titles powered by TMDB metadata & VidRift 4K playback
+          Search live across movies, TV series, cast, and 4K streaming titles
         </p>
       </div>
 

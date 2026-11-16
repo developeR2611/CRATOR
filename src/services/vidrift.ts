@@ -439,8 +439,8 @@ export function resolveVidRiftPlayback(
     return {
       embedUrl: '',
       tmdbId,
-      error: err.message || 'Failed to generate VidRift embed URL.',
-      errorCode: 'VIDRIFT_URL_GENERATION_FAILED',
+      error: err.message || 'Unable to prepare playback stream.',
+      errorCode: 'STREAM_UNAVAILABLE',
     };
   }
 }

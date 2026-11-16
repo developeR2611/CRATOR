@@ -195,7 +195,7 @@ class AvailabilityService {
       const res: AvailabilityResult = {
         isAvailable: true,
         confidence: 'confirmed',
-        reason: 'Verified playable in VidRift catalogue',
+        reason: 'Available for instant playback',
         checkedAt: now,
       };
       this.cache.set(key, res);
@@ -242,7 +242,7 @@ class AvailabilityService {
       confidence: isProbable ? 'probable' : 'unavailable',
       reason: isProbable
         ? 'Title is released with standard theatrical/digital distribution'
-        : 'Missing required TMDB stream identifiers',
+        : 'Stream identifier unavailable for this title',
       checkedAt: now,
     };
 
@@ -260,7 +260,7 @@ class AvailabilityService {
     const res: AvailabilityResult = {
       isAvailable: true,
       confidence: 'confirmed',
-      reason: 'Confirmed live playback from VidRift stream',
+      reason: 'Confirmed live playback stream',
       checkedAt: Date.now(),
     };
     this.cache.set(key, res);

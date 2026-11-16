@@ -89,7 +89,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
                 onPlay(item);
               }}
               className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
-              title={`Play ${item.title} (VidRift 4K)`}
+              title={`Play ${item.title}`}
               aria-label={`Play ${item.title}`}
             >
               <Play className="w-4 h-4 fill-current ml-0.5" />

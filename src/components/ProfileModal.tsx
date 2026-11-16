@@ -72,7 +72,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {profileName}
             </h1>
             <span className="glass-badge px-2.5 py-0.5 rounded-full text-[10px] font-mono text-white">
-              VidRift 4K
+              4K HDR
             </span>
           </div>
           <p className="text-xs text-[#9a9ba1] mt-0.5 font-mono">
@@ -81,29 +81,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
       </div>
 
-      {/* Streaming Provider Status */}
+      {/* Streaming Status */}
       <div className="glass-surface p-4 rounded-xl space-y-1.5">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="eyebrow flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-white" />
-            Streaming Engine
+            Playback Status
           </span>
           <span className="glass-badge text-[10px] font-mono px-2.5 py-0.5 rounded-full text-emerald-300 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>VidRift Embedded (Active)</span>
+            <span>4K Adaptive Stream (Active)</span>
           </span>
         </div>
         <p className="text-xs text-[#9a9ba1] leading-relaxed">
-          Powered by VidRift&apos;s high-speed adaptive HLS streaming engine with multi-server failover and subtitles. No key required.
+          High-speed adaptive HLS streaming with multi-server failover and subtitles enabled automatically.
         </p>
       </div>
 
-      {/* TMDB server configuration status */}
+      {/* Catalog & Search Status */}
       <div className="space-y-2.5 pt-3 border-t border-white/10">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <span className="eyebrow flex items-center gap-1.5">
             <Film className="w-3.5 h-3.5 text-white" />
-            TMDB Title Discovery & Metadata
+            Live Catalog &amp; Search
           </span>
           {tmdbStatus && (
             <span
@@ -112,15 +112,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               }`}
             >
               {tmdbStatus.isVerified
-                ? 'Active & Verified'
+                ? 'Active'
                 : tmdbStatus.hasKey
-                  ? 'Configured'
-                  : 'Not Configured'}
+                  ? 'Ready'
+                  : 'Limited'}
             </span>
           )}
         </div>
         <p className="text-xs text-[#9a9ba1] leading-relaxed">
-          Search and live catalog data use the server-side TMDB_API_KEY setting. Manage it in the Vercel project environment variables.
+          Live catalog discovery, episode schedules, trailers, and instant search are synced automatically.
         </p>
       </div>
 

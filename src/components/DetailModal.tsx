@@ -102,14 +102,18 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
   // Hero poster 3-second trailer autoplay state
   const HERO_AUTOPLAY_DELAY_MS = 3000;
+  const HERO_CURSOR_IDLE_MS = 3000;
   const [heroTrailerActive, setHeroTrailerActive] = useState<boolean>(false);
   const [heroTrailerConfirmed, setHeroTrailerConfirmed] = useState<boolean>(false);
   const [heroTrailerMuted, setHeroTrailerMuted] = useState<boolean>(true);
   const [heroTrailerBlocked, setHeroTrailerBlocked] = useState<boolean>(false);
   const [heroTrailerFinished, setHeroTrailerFinished] = useState<boolean>(false);
+  const [heroDetailsVisibleDuringTrailer, setHeroDetailsVisibleDuringTrailer] = useState<boolean>(false);
   const heroTimerRef = useRef<number | null>(null);
   const heroFallbackTimerRef = useRef<number | null>(null);
   const heroRevealTimerRef = useRef<number | null>(null);
+  const heroDetailsIdleTimerRef = useRef<number | null>(null);
+  const heroContentHoveredRef = useRef<boolean>(false);
   const heroIframeRef = useRef<HTMLIFrameElement | null>(null);
   const titleOpenedAtRef = useRef<number>(Date.now());
   const isStartingVidRiftRef = useRef<boolean>(false);
@@ -120,6 +124,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   const [isPersonLoading, setIsPersonLoading] = useState<boolean>(false);
   const [personError, setPersonError] = useState<string | null>(null);
   const [isBioExpanded, setIsBioExpanded] = useState<boolean>(false);
+
+  const clearHeroDetailsIdleTimer = () => {
+    if (heroDetailsIdleTimerRef.current !== null) {
+      window.clearTimeout(heroDetailsIdleTimerRef.current);
+      heroDetailsIdleTimerRef.current = null;
+    }
+  };
 
   const cancelHeroTrailer = () => {
     if (heroTimerRef.current !== null) {
@@ -134,6 +145,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       window.clearTimeout(heroRevealTimerRef.current);
       heroRevealTimerRef.current = null;
     }
+    clearHeroDetailsIdleTimer();
+    heroContentHoveredRef.current = false;
+    setHeroDetailsVisibleDuringTrailer(false);
     setHeroTrailerActive(false);
     setHeroTrailerConfirmed(false);
   };
@@ -300,25 +314,55 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     };
   }, [item?.id, leadTrailerKey, heroTrailerBlocked, heroTrailerFinished]);
 
-  // Verify YouTube playback started, wait briefly for intro UI buttons to fade behind poster, and restore poster when trailer ends
+  // Verify YouTube playback started, keep intro/pause/end center playback buttons completely behind poster, and restore poster when trailer ends
   useEffect(() => {
     if (!heroTrailerActive || !leadTrailerKey) return;
 
     let confirmedPlayback = false;
+    let isRevealed = false;
     let isEffectCancelled = false;
+    let knownDuration = 0;
+
+    const clearRevealTimer = () => {
+      if (heroRevealTimerRef.current !== null) {
+        window.clearTimeout(heroRevealTimerRef.current);
+        heroRevealTimerRef.current = null;
+      }
+    };
+
+    const revealTrailer = () => {
+      if (isRevealed || isEffectCancelled || isStartingVidRiftRef.current) return;
+      isRevealed = true;
+      clearRevealTimer();
+      window.clearInterval(handshakeInterval);
+      setHeroTrailerConfirmed(true);
+    };
+
+    const finishTrailer = () => {
+      window.clearInterval(handshakeInterval);
+      if (heroFallbackTimerRef.current !== null) {
+        window.clearTimeout(heroFallbackTimerRef.current);
+        heroFallbackTimerRef.current = null;
+      }
+      clearRevealTimer();
+      setHeroTrailerFinished(true);
+      setHeroTrailerConfirmed(false);
+      setHeroTrailerActive(false);
+    };
 
     const handshakeInterval = window.setInterval(() => {
-      if (confirmedPlayback) return;
+      if (isRevealed) return;
       registerHeroYouTubeListeners();
     }, 350);
 
     heroFallbackTimerRef.current = window.setTimeout(() => {
       if (!confirmedPlayback) {
+        clearRevealTimer();
         setHeroTrailerActive(false);
         setHeroTrailerConfirmed(false);
         setHeroTrailerBlocked(true);
       }
-    }, 6500);
+    }, 7000);
 
     const handleYouTubeMessage = (event: MessageEvent) => {
       if (
@@ -342,15 +386,21 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           window.clearTimeout(heroFallbackTimerRef.current);
           heroFallbackTimerRef.current = null;
         }
-        if (heroRevealTimerRef.current !== null) {
-          window.clearTimeout(heroRevealTimerRef.current);
-          heroRevealTimerRef.current = null;
-        }
+        clearRevealTimer();
         setHeroTrailerActive(false);
         setHeroTrailerConfirmed(false);
         setHeroTrailerBlocked(true);
         return;
       }
+
+      if (payload.event === 'infoDelivery' && typeof payload.info?.duration === 'number' && payload.info.duration > 0) {
+        knownDuration = payload.info.duration;
+      }
+
+      const currentTime =
+        payload.event === 'infoDelivery' && typeof payload.info?.currentTime === 'number'
+          ? payload.info.currentTime
+          : undefined;
 
       const playerState =
         payload.event === 'onStateChange'
@@ -359,35 +409,47 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             ? payload.info?.playerState
             : undefined;
 
-      if (playerState === 1 && !confirmedPlayback) {
+      if (playerState === 1) {
         confirmedPlayback = true;
-        window.clearInterval(handshakeInterval);
         if (heroFallbackTimerRef.current !== null) {
           window.clearTimeout(heroFallbackTimerRef.current);
           heroFallbackTimerRef.current = null;
         }
-        // Hold poster for ~2.2s while YouTube's initial top-right buttons & title card fade out
-        heroRevealTimerRef.current = window.setTimeout(() => {
-          if (!isEffectCancelled && !isStartingVidRiftRef.current) {
-            setHeroTrailerConfirmed(true);
+
+        // Wait until at least ~3.2s of active playback has elapsed so both the center playback icon and top-right intro buttons are completely gone
+        if (!isRevealed) {
+          if (typeof currentTime === 'number' && currentTime >= 3.2) {
+            revealTrailer();
+          } else if (heroRevealTimerRef.current === null) {
+            heroRevealTimerRef.current = window.setTimeout(() => {
+              revealTrailer();
+            }, 3200);
           }
-        }, 2200);
+        }
       }
 
-      // Trailer ended: play once only, then restore poster and hero details cleanly
-      if (playerState === 0) {
-        window.clearInterval(handshakeInterval);
-        if (heroFallbackTimerRef.current !== null) {
-          window.clearTimeout(heroFallbackTimerRef.current);
-          heroFallbackTimerRef.current = null;
+      // If buffering/paused/cued before or during playback, never expose YouTube's center playback button
+      if (playerState === 2 || playerState === 3 || playerState === 5) {
+        clearRevealTimer();
+        if (isRevealed && playerState === 2) {
+          isRevealed = false;
+          setHeroTrailerConfirmed(false);
+          try {
+            heroIframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+              'https://www.youtube-nocookie.com'
+            );
+          } catch {}
         }
-        if (heroRevealTimerRef.current !== null) {
-          window.clearTimeout(heroRevealTimerRef.current);
-          heroRevealTimerRef.current = null;
-        }
-        setHeroTrailerFinished(true);
-        setHeroTrailerConfirmed(false);
-        setHeroTrailerActive(false);
+      }
+
+      // Hide just before end-screen suggestions / replay playback button appear
+      if (
+        playerState === 0 ||
+        (typeof currentTime === 'number' && knownDuration > 6 && currentTime >= knownDuration - 0.7)
+      ) {
+        finishTrailer();
+        return;
       }
 
       if (payload.event === 'infoDelivery' && typeof payload.info?.muted === 'boolean') {
@@ -404,10 +466,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         window.clearTimeout(heroFallbackTimerRef.current);
         heroFallbackTimerRef.current = null;
       }
-      if (heroRevealTimerRef.current !== null) {
-        window.clearTimeout(heroRevealTimerRef.current);
-        heroRevealTimerRef.current = null;
-      }
+      clearRevealTimer();
     };
   }, [heroTrailerActive, leadTrailerKey]);
 
@@ -697,6 +756,23 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   const castMembers = Array.isArray(activeItem.cast) ? activeItem.cast : [];
   const directorName = activeItem.director;
   const isHeroTrailerShowing = heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked;
+  const hideHeroDetailsForTrailer = isHeroTrailerShowing && !heroDetailsVisibleDuringTrailer;
+
+  const scheduleHeroDetailsAutoHide = () => {
+    clearHeroDetailsIdleTimer();
+    if (!isHeroTrailerShowing || heroContentHoveredRef.current) return;
+    heroDetailsIdleTimerRef.current = window.setTimeout(() => {
+      if (!heroContentHoveredRef.current) {
+        setHeroDetailsVisibleDuringTrailer(false);
+      }
+    }, HERO_CURSOR_IDLE_MS);
+  };
+
+  const handleHeroPointerActivity = () => {
+    if (!isHeroTrailerShowing) return;
+    setHeroDetailsVisibleDuringTrailer(true);
+    scheduleHeroDetailsAutoHide();
+  };
 
   return (
     <div className="relative min-h-screen w-full bg-[#040508] text-[#f3f0ea] select-none animate-fadeIn">
@@ -712,7 +788,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </button>
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
-      <div className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden">
+      <div
+        className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
+        onMouseMove={handleHeroPointerActivity}
+        onTouchStart={handleHeroPointerActivity}
+      >
         {/* Full-Bleed Poster / Trailer Media Layer */}
         <div className="absolute inset-0 z-0 overflow-hidden" data-hero-poster-area="true">
           {/* Embedded Auto-Playing Trailer (renders underneath poster until playback & chrome fade are ready) */}
@@ -795,15 +875,27 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         )}
 
         {/* Hero Content Block */}
-        <div className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-8 sm:pb-10 pt-44 sm:pt-60 md:pt-72">
-          {/* Kicker Row (hidden smoothly while trailer plays so only logo stays visible) */}
+        <div
+          className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-8 sm:pb-10 pt-44 sm:pt-60 md:pt-72"
+          onMouseEnter={() => {
+            if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+              heroContentHoveredRef.current = true;
+              clearHeroDetailsIdleTimer();
+            }
+          }}
+          onMouseLeave={() => {
+            heroContentHoveredRef.current = false;
+            scheduleHeroDetailsAutoHide();
+          }}
+        >
+          {/* Kicker Row (hidden smoothly while trailer plays cleanly; reappears on cursor movement) */}
           <div
-            className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${
-              isHeroTrailerShowing
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out ${
+              hideHeroDetailsForTrailer
                 ? 'grid-rows-[0fr] opacity-0 mb-0 pointer-events-none'
                 : 'grid-rows-[1fr] opacity-100 mb-2.5 sm:mb-3'
             }`}
-            aria-hidden={isHeroTrailerShowing}
+            aria-hidden={hideHeroDetailsForTrailer}
           >
             <div className="overflow-hidden">
               <div className="flex items-center flex-wrap gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
@@ -842,14 +934,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             )}
           </div>
 
-          {/* Remaining Hero Details & Actions (hidden smoothly while trailer plays) */}
+          {/* Remaining Hero Details & Actions (hidden smoothly while trailer plays cleanly; reappears on cursor movement) */}
           <div
-            className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${
-              isHeroTrailerShowing
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out ${
+              hideHeroDetailsForTrailer
                 ? 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
                 : 'grid-rows-[1fr] opacity-100 mt-2.5 sm:mt-3'
             }`}
-            aria-hidden={isHeroTrailerShowing}
+            aria-hidden={hideHeroDetailsForTrailer}
           >
             <div className="overflow-hidden space-y-2.5 sm:space-y-3">
               {/* Genres row */}
@@ -1082,7 +1174,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                           )}
                         </div>
                         <p className="text-xs text-[#9a9ba1] line-clamp-2">
-                          {ep.synopsis || (epUnreleased ? `Scheduled to air ${formatReleaseDate(ep.releaseDate)}.` : 'Full episode stream ready via VidRift player.')}
+                          {ep.synopsis || (epUnreleased ? `Scheduled to air ${formatReleaseDate(ep.releaseDate)}.` : 'Full episode stream ready to watch.')}
                         </p>
                       </div>
 
@@ -1189,9 +1281,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   More Like This
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#9a9ba1]">
-                Powered by TMDB
-              </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
@@ -1340,7 +1429,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 </div>
               ) : (
                 <p className="text-sm text-[#9a9ba1] italic">
-                  No biography available for {personDetails?.name || selectedCast.name} on TMDB.
+                  No biography available for {personDetails?.name || selectedCast.name}.
                 </p>
               )}
             </div>
@@ -1401,7 +1490,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   </div>
                 ) : (
                   <p className="text-xs text-[#8e8a91]">
-                    No credited movies or TV shows listed on TMDB.
+                    No credited movies or TV shows listed yet.
                   </p>
                 )}
               </div>

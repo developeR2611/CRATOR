@@ -241,7 +241,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
             </div>
 
             <div className="w-full pt-1.5 border-t border-white/10 text-[9px] text-[#8a8890] tracking-widest uppercase font-mono z-10">
-              VidRift Playable
+              4K Stream Ready
             </div>
           </div>
         )

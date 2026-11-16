@@ -605,7 +605,7 @@ export async function getTmdbVideos(
 ): Promise<{ videos: TrailerVideo[]; error?: string }> {
   const cleanId = String(id || '').replace(/^tmdb-(movie|tv|series)-/i, '').replace(/^tmdb-/i, '').trim();
   if (!/^\d+$/.test(cleanId)) {
-    return { videos: [], error: 'Valid numeric TMDB ID is required to fetch trailers.' };
+    return { videos: [], error: 'Valid title ID is required to fetch trailers.' };
   }
 
   try {
@@ -630,7 +630,7 @@ export async function getTmdbVideos(
   } catch {
     return {
       videos: [],
-      error: 'Unable to reach TMDB trailer service right now.',
+      error: 'Unable to load trailers right now.',
     };
   }
 }

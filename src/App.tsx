@@ -674,7 +674,7 @@ export default function App() {
         <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
         <div className="space-y-1">
           <h2 className="font-display font-bold text-lg text-white">{label}</h2>
-          <p className="text-xs text-[#9a9ba1] font-mono">Fetching live TMDB metadata...</p>
+          <p className="text-xs text-[#9a9ba1] font-mono">Loading title details...</p>
         </div>
         <button
           type="button"
@@ -1052,7 +1052,7 @@ export default function App() {
                 CRATOR
               </a>
               <span className="text-white/20">/</span>
-              <span className="text-xs text-[#8e8a91]">VidRift 4K Ultra HD</span>
+              <span className="text-xs text-[#8e8a91]">4K Ultra HD</span>
             </div>
 
             <div className="flex items-center flex-wrap gap-2 text-xs text-[#c9c7cc]">
@@ -1084,7 +1084,7 @@ export default function App() {
             <p>
               CRATOR does not store any files on our server, we only link to media hosted on 3rd party services.
             </p>
-            <p>© {new Date().getFullYear()} CRATOR. Powered by VidRift &amp; The Movie Database.</p>
+            <p>© {new Date().getFullYear()} CRATOR. All rights reserved.</p>
           </div>
         </footer>
       )}

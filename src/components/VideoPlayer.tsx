@@ -98,8 +98,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     });
 
     if (result.error || !result.embedUrl) {
-      setErrorMessage(result.error || 'Could not resolve streaming embed for this title.');
-      setErrorCode(result.errorCode || 'VIDRIFT_RESOLUTION_FAILED');
+      setErrorMessage(result.error || 'Could not resolve playback stream for this title.');
+      setErrorCode(result.errorCode || 'STREAM_UNAVAILABLE');
       setIsLoading(false);
       return;
     }
@@ -321,7 +321,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <Loader2 className="w-9 h-9 text-white animate-spin" />
             <div className="space-y-1">
               <h3 className="text-[#f3f0ea] font-semibold text-sm">
-                Connecting to VidRift Stream
+                Loading Stream
               </h3>
               <p className="text-xs text-[#9a9ba1] font-mono">Title: {item.title}</p>
             </div>
@@ -405,13 +405,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </h2>
             <div className="flex items-center gap-2 text-xs text-[#c9c7cc]">
               <span className="glass-badge font-mono px-2 py-0.5 rounded-full text-[11px] text-[#f3f0ea]">
-                VidRift 4K Ultra HD
+                4K Ultra HD
               </span>
-              {tmdbNumericId && (
-                <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
-                  TMDB: {tmdbNumericId}
-                </span>
-              )}
               {isTv && (
                 <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
                   Season {currentSeason} · Episode {currentEpisode}

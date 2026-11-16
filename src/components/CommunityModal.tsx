@@ -85,7 +85,7 @@ export const CommunityModal: React.FC<CommunityModalProps> = ({
         {[
           {
             name: 'CRATOR Official Announcements',
-            desc: 'Direct daily 4K drops, VidRift updates, and new series alert',
+            desc: 'Direct daily 4K drops, platform updates, and new series alerts',
             tag: 'Main Channel',
           },
           {

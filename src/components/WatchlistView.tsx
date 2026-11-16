@@ -103,7 +103,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <div className="space-y-1">
             <h3 className="font-display font-bold text-lg text-[#f3f0ea]">Your list is empty</h3>
             <p className="text-xs text-[#9a9ba1] max-w-xs mx-auto">
-              Save movies and TV shows to your list to easily stream them anytime with VidRift.
+              Save movies and TV shows to your list to easily stream them anytime.
             </p>
           </div>
           <button
