@@ -1474,6 +1474,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                             fallbackSrc={credit.backdropUrl}
                             alt={credit.title}
                             fallbackTitle={credit.title}
+                            loading="lazy"
                             containerClassName="w-full h-full"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />

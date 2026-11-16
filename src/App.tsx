@@ -36,6 +36,7 @@ import {
   getTmdbStatus,
   TmdbStatus,
 } from './services/tmdb';
+import { isMediaUnreleased } from './services/availability';
 import {
   AppRoute,
   EXTRA_PATHS,
@@ -115,6 +116,7 @@ export default function App() {
   const [tmdbTrendingItems, setTmdbTrendingItems] = useState<MediaItem[]>([]);
   const [tmdbPopularItems, setTmdbPopularItems] = useState<MediaItem[]>([]);
   const [tmdbTopRatedItems, setTmdbTopRatedItems] = useState<MediaItem[]>([]);
+  const [isHeroLoading, setIsHeroLoading] = useState<boolean>(true);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isRefreshingHome, setIsRefreshingHome] = useState<boolean>(false);
@@ -206,28 +208,28 @@ export default function App() {
     } catch {}
   }, [continueWatchingItems]);
 
-  // Core Home Refresh Engine: Re-queries TMDB live feeds
+  // Core Home Refresh Engine: Re-queries TMDB live feeds in parallel
   const refreshHomePage = async (showNotification = true) => {
     setIsRefreshingHome(true);
     try {
-      const tmdbStat = await getTmdbStatus();
-      setTmdbStatus(tmdbStat);
-      if (tmdbStat.configured || tmdbStat.hasKey) {
-        const [trendingRes, popularRes, topRatedRes] = await Promise.allSettled([
-          getTmdbTrending(),
-          getTmdbPopular('movie'),
-          getTmdbTopRated('tv'),
-        ]);
+      const [statusRes, trendingRes, popularRes, topRatedRes] = await Promise.allSettled([
+        getTmdbStatus(),
+        getTmdbTrending(),
+        getTmdbPopular('movie'),
+        getTmdbTopRated('tv'),
+      ]);
 
-        if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
-          setTmdbTrendingItems(trendingRes.value);
-        }
-        if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
-          setTmdbPopularItems(popularRes.value);
-        }
-        if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
-          setTmdbTopRatedItems(topRatedRes.value);
-        }
+      if (statusRes.status === 'fulfilled') {
+        setTmdbStatus(statusRes.value);
+      }
+      if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
+        setTmdbTrendingItems(trendingRes.value);
+      }
+      if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
+        setTmdbPopularItems(popularRes.value);
+      }
+      if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
+        setTmdbTopRatedItems(topRatedRes.value);
       }
 
       if (showNotification) {
@@ -240,6 +242,7 @@ export default function App() {
       }
     } finally {
       setIsRefreshingHome(false);
+      setIsHeroLoading(false);
     }
   };
 
@@ -592,11 +595,55 @@ export default function App() {
     showToast('Cleared watch history');
   };
 
-  // Curated & deduplicated datasets for Home sections
+  // Dynamic TMDB Hero Carousel (prefers released trending titles with genuine widescreen backdrops)
   const heroFeaturedItems = useMemo(() => {
+    if (tmdbTrendingItems.length > 0) {
+      const catalogByKey = new Map<string, MediaItem>();
+      for (const entry of MEDIA_CATALOG) {
+        catalogByKey.set(getMediaKey(entry), entry);
+      }
+
+      const enriched = tmdbTrendingItems.map((item) => {
+        const existing = catalogByKey.get(getMediaKey(item));
+        return existing
+          ? {
+              ...item,
+              logoUrl: item.logoUrl || existing.logoUrl,
+              fallbackBackdropUrl: existing.fallbackBackdropUrl,
+              fallbackPosterUrl: existing.fallbackPosterUrl,
+              trailers: item.trailers?.length ? item.trailers : existing.trailers,
+            }
+          : item;
+      });
+
+      const withBackdrop = enriched.filter(
+        (item) => Boolean(item.backdropUrl) && item.backdropUrl !== item.posterUrl
+      );
+      const releasedWithBackdrop = withBackdrop.filter((item) => !isMediaUnreleased(item));
+
+      let pool: MediaItem[];
+      if (releasedWithBackdrop.length >= 5) {
+        pool = releasedWithBackdrop;
+      } else if (withBackdrop.length > 0) {
+        const seen = new Set(releasedWithBackdrop.map(getMediaKey));
+        pool = [
+          ...releasedWithBackdrop,
+          ...withBackdrop.filter((item) => !seen.has(getMediaKey(item))),
+        ];
+      } else {
+        pool = enriched;
+      }
+
+      return pool.slice(0, 5);
+    }
+
+    if (isHeroLoading) {
+      return [];
+    }
+
     const list = MEDIA_CATALOG.filter((item) => item.featuredInHero);
     return list.length > 0 ? list.slice(0, 5) : MEDIA_CATALOG.slice(0, 5);
-  }, []);
+  }, [tmdbTrendingItems, isHeroLoading]);
 
   const topTenItems = useMemo(() => {
     const ranked = MEDIA_CATALOG.filter((item) => typeof item.topTenRank === 'number').sort(
@@ -741,6 +788,7 @@ export default function App() {
           <div className="pb-12">
             <HeroSection
               featuredItems={heroFeaturedItems}
+              isLoading={isHeroLoading}
               onPlay={(item) => handlePlay(item)}
               onOpenDetails={openDetailsPage}
             />

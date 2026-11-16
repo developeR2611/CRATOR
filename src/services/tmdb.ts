@@ -688,13 +688,14 @@ export async function getTmdbPerson(
 
     const castCredits = Array.isArray(data?.combined_credits?.cast) ? data.combined_credits.cast : [];
     const crewCredits = Array.isArray(data?.combined_credits?.crew) ? data.combined_credits.crew : [];
-    const creditPool = castCredits.length > 0 ? castCredits : crewCredits;
+    const creditPool = castCredits.length > 0 ? [...castCredits, ...crewCredits] : crewCredits;
 
     const seenCredits = new Set<string>();
     const filteredCredits = creditPool.filter((c: any) => {
       if (!c || !c.id) return false;
       const mType = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
       if (!mType) return false;
+      if (!c.poster_path && !c.backdrop_path) return false;
       const key = `${mType}:${c.id}`;
       if (seenCredits.has(key)) return false;
       seenCredits.add(key);
@@ -712,7 +713,7 @@ export async function getTmdbPerson(
       return scoreB - scoreA;
     });
 
-    const knownFor: PersonKnownForItem[] = sortedCredits.slice(0, 8).map((c: any) => {
+    const knownFor: PersonKnownForItem[] = sortedCredits.map((c: any) => {
       const mType: 'movie' | 'tv' = c.media_type === 'tv' ? 'tv' : 'movie';
       const mapped = mapTmdbToMediaItem(c, mType === 'tv' ? 'series' : 'movie');
       return {
