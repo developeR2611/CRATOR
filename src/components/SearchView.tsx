@@ -19,6 +19,8 @@ interface SearchViewProps {
   onOpenDetails: (item: MediaItem) => void;
   onToggleWatchlist: (item: MediaItem) => void;
   isInWatchlist: (id: string) => boolean;
+  initialQuery?: string;
+  onQueryChange?: (query: string) => void;
 }
 
 const POPULAR_SEARCH_TAGS = [
@@ -40,8 +42,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
   onOpenDetails,
   onToggleWatchlist,
   isInWatchlist,
+  initialQuery = '',
+  onQueryChange,
 }) => {
-  const [query, setQuery] = useState<string>('');
+  const [query, setQuery] = useState<string>(initialQuery);
   const [selectedType, setSelectedType] = useState<'all' | 'movie' | 'series'>('all');
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
 
@@ -56,6 +60,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   // Request race-condition tracking
   const searchRequestIdRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastEmittedQueryRef = useRef<string>(initialQuery);
 
   // Recent searches with persistence
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -66,6 +71,13 @@ export const SearchView: React.FC<SearchViewProps> = ({
       return ['Avatar', 'Dune', 'Severance'];
     }
   });
+
+  useEffect(() => {
+    if (initialQuery !== lastEmittedQueryRef.current) {
+      lastEmittedQueryRef.current = initialQuery;
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -166,15 +178,18 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   // Debounced search when query changes
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       setResults([]);
       setIsLoading(false);
+      onQueryChange?.('');
       return;
     }
 
     const timer = setTimeout(() => {
-      executeSearch(query, 1, false);
-      saveRecentSearch(query);
+      onQueryChange?.(trimmed);
+      executeSearch(trimmed, 1, false);
+      saveRecentSearch(trimmed);
     }, 350);
 
     return () => clearTimeout(timer);
@@ -182,14 +197,17 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      executeSearch(query, 1, false);
-      saveRecentSearch(query);
+    const trimmed = query.trim();
+    if (trimmed) {
+      onQueryChange?.(trimmed);
+      executeSearch(trimmed, 1, false);
+      saveRecentSearch(trimmed);
     }
   };
 
   const handleTagClick = (tag: string) => {
     setQuery(tag);
+    onQueryChange?.(tag);
     executeSearch(tag, 1, false);
     saveRecentSearch(tag);
   };

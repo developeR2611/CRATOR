@@ -146,9 +146,15 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   // Sync state whenever props change
   useEffect(() => {
     const initial = getInitialSrc();
-    setCurrentSrc(initial);
+    setCurrentSrc((prev) => {
+      if (prev === initial && imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true);
+      } else {
+        setIsLoaded(false);
+      }
+      return initial;
+    });
     setHasError(!initial && isAvatar);
-    setIsLoaded(false);
     setTriedFallbackSrc(false);
     setTriedPreset(false);
     setTriedCinematicFallback(false);

@@ -238,4 +238,71 @@ app.get('/api/tmdb/:type/:id/recommendations', async (req: Request, res: Respons
   res.json(result.data);
 });
 
+// 10. Movie / TV Videos & Trailers
+app.get('/api/tmdb/:type/:id/videos', async (req: Request, res: Response) => {
+  const rawType = String(req.params.type || '').toLowerCase();
+  if (rawType !== 'movie' && rawType !== 'tv' && rawType !== 'series') {
+    return res.status(400).json({ error: 'Invalid media type. Expected movie or tv.' });
+  }
+
+  const mediaType = rawType === 'movie' ? 'movie' : 'tv';
+  const cleanId = String(req.params.id || '')
+    .replace(/^tmdb-(movie|tv|series)-/i, '')
+    .replace(/^tmdb-/i, '')
+    .trim();
+
+  if (!/^\d+$/.test(cleanId)) {
+    return res.status(400).json({ error: 'Valid numeric TMDB ID is required.' });
+  }
+
+  const result = await callTmdbApi(`/${mediaType}/${cleanId}/videos`, { language: 'en-US' });
+  if (!result.ok) return res.status(result.status || 500).json(result);
+
+  const enResults = Array.isArray(result.data?.results) ? result.data.results : [];
+  if (enResults.length > 0) {
+    return res.json(result.data);
+  }
+
+  const anyLang = await callTmdbApi(`/${mediaType}/${cleanId}/videos`, {});
+  if (!anyLang.ok) return res.json(result.data);
+  res.json(anyLang.data);
+});
+
+// 11. Search TMDB Person by Name (fallback when cast entry lacks ID)
+app.get('/api/tmdb/person/search', async (req: Request, res: Response) => {
+  const query = req.query.query ? String(req.query.query).trim() : '';
+  if (!query) {
+    return res.status(400).json({ error: 'Query parameter is required.' });
+  }
+
+  const result = await callTmdbApi('/search/person', {
+    query,
+    include_adult: 'false',
+    language: 'en-US',
+    page: 1,
+  });
+  if (!result.ok) return res.status(result.status || 500).json(result);
+  res.json(result.data);
+});
+
+// 12. Person Details & Combined Credits
+app.get('/api/tmdb/person/:id', async (req: Request, res: Response) => {
+  const cleanId = String(req.params.id || '').replace(/^tmdb-person-/i, '').trim();
+  if (!/^\d+$/.test(cleanId) || Number(cleanId) <= 0) {
+    return res.status(400).json({ error: 'Valid numeric TMDB person ID is required.' });
+  }
+
+  const result = await callTmdbApi(`/person/${cleanId}`, {
+    append_to_response: 'combined_credits',
+    language: 'en-US',
+  });
+  if (!result.ok) return res.status(result.status || 500).json(result);
+  res.json(result.data);
+});
+
+// Ensure unmatched /api/* endpoints return JSON 404 rather than falling through to SPA HTML
+app.all('/api/*', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
 export default app;

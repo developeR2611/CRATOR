@@ -1,108 +1,111 @@
 import React from 'react';
-import { 
-  House, 
-  Clapperboard, 
-  Tv, 
-  Compass, 
-  Bookmark, 
-  Search, 
-  Settings 
+import {
+  House,
+  Clapperboard,
+  Tv,
+  Compass,
+  Bookmark,
+  Search,
+  Settings,
 } from 'lucide-react';
+import { AppRoute, NavTab, TAB_PATHS, EXTRA_PATHS } from '../utils/router';
 
-export type NavTab = 'home' | 'movies' | 'tv' | 'discover' | 'mylist' | 'search';
+export type { NavTab };
 
 interface HeaderProps {
-  activeTab: NavTab;
-  onSelectTab: (tab: NavTab) => void;
-  onOpenSearch: () => void;
-  onOpenSettings: () => void;
-  onOpenDiscord: () => void;
+  activeRoute: AppRoute['name'];
+  onNavigate: (path: string) => void;
   isHidden?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  activeTab,
-  onSelectTab,
-  onOpenSearch,
-  onOpenSettings,
-  onOpenDiscord,
+  activeRoute,
+  onNavigate,
   isHidden = false,
 }) => {
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+      return;
+    }
+    e.preventDefault();
+    onNavigate(path);
+  };
+
   return (
     <header className={`topbar ${isHidden ? 'is-hidden' : ''}`} aria-hidden={isHidden}>
       {/* Desktop Brand (Left) */}
-      <button
-        type="button"
-        className="desktop-nav-brand" 
-        onClick={() => onSelectTab('home')}
+      <a
+        href={TAB_PATHS.home}
+        className="desktop-nav-brand no-underline"
+        onClick={(e) => handleLinkClick(e, TAB_PATHS.home)}
         title="CRATOR"
         aria-label="CRATOR Home"
       >
         CRATOR
-      </button>
+      </a>
 
       {/* Floating Center Pill Navigation */}
       <nav className="nav-pill" aria-label="Primary navigation">
         <div className="tab-links">
           {/* Home */}
-          <button
-            type="button"
-            onClick={() => onSelectTab('home')}
-            className={`nav-tab ${activeTab === 'home' ? 'active' : ''}`}
-            aria-current={activeTab === 'home' ? 'page' : undefined}
+          <a
+            href={TAB_PATHS.home}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.home)}
+            className={`nav-tab ${activeRoute === 'home' ? 'active' : ''}`}
+            aria-current={activeRoute === 'home' ? 'page' : undefined}
             aria-label="Home"
           >
             <House className="tab-icon" />
             <span className="tab-label">Home</span>
-          </button>
+          </a>
 
           {/* Movies */}
-          <button
-            type="button"
-            onClick={() => onSelectTab('movies')}
-            className={`nav-tab ${activeTab === 'movies' ? 'active' : ''}`}
-            aria-current={activeTab === 'movies' ? 'page' : undefined}
+          <a
+            href={TAB_PATHS.movies}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.movies)}
+            className={`nav-tab ${activeRoute === 'movies' ? 'active' : ''}`}
+            aria-current={activeRoute === 'movies' ? 'page' : undefined}
             aria-label="Movies"
           >
             <Clapperboard className="tab-icon" />
             <span className="tab-label">Movies</span>
-          </button>
+          </a>
 
           {/* TV */}
-          <button
-            type="button"
-            onClick={() => onSelectTab('tv')}
-            className={`nav-tab ${activeTab === 'tv' ? 'active' : ''}`}
-            aria-current={activeTab === 'tv' ? 'page' : undefined}
+          <a
+            href={TAB_PATHS.tv}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.tv)}
+            className={`nav-tab ${activeRoute === 'tv' ? 'active' : ''}`}
+            aria-current={activeRoute === 'tv' ? 'page' : undefined}
             aria-label="TV"
           >
             <Tv className="tab-icon" />
             <span className="tab-label">TV</span>
-          </button>
+          </a>
 
           {/* Discover */}
-          <button
-            type="button"
-            onClick={() => onSelectTab('discover')}
-            className={`nav-tab ${activeTab === 'discover' ? 'active' : ''}`}
-            aria-current={activeTab === 'discover' ? 'page' : undefined}
+          <a
+            href={TAB_PATHS.discover}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.discover)}
+            className={`nav-tab ${activeRoute === 'discover' ? 'active' : ''}`}
+            aria-current={activeRoute === 'discover' ? 'page' : undefined}
             aria-label="Discover"
           >
             <Compass className="tab-icon" />
             <span className="tab-label">Discover</span>
-          </button>
+          </a>
 
           {/* My List */}
-          <button
-            type="button"
-            onClick={() => onSelectTab('mylist')}
-            className={`nav-tab ${activeTab === 'mylist' ? 'active' : ''}`}
-            aria-current={activeTab === 'mylist' ? 'page' : undefined}
+          <a
+            href={TAB_PATHS.mylist}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.mylist)}
+            className={`nav-tab ${activeRoute === 'mylist' ? 'active' : ''}`}
+            aria-current={activeRoute === 'mylist' ? 'page' : undefined}
             aria-label="My List"
           >
             <Bookmark className="tab-icon" />
             <span className="tab-label">My List</span>
-          </button>
+          </a>
         </div>
 
         {/* Vertical Separator */}
@@ -110,46 +113,48 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div className="nav-actions">
-          {/* Discord Icon Placeholder */}
-          <button
-            type="button"
-            onClick={onOpenDiscord}
-            className="nav-action"
+          {/* Community Page Link */}
+          <a
+            href={EXTRA_PATHS.community}
+            onClick={(e) => handleLinkClick(e, EXTRA_PATHS.community)}
+            className={`nav-action no-underline ${activeRoute === 'community' ? 'is-active' : ''}`}
             title="Join Community"
             aria-label="Join Community"
+            aria-current={activeRoute === 'community' ? 'page' : undefined}
           >
-            <svg 
-              className="w-4 h-4" 
-              viewBox="0 0 24 24" 
-              fill="currentColor" 
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="currentColor"
               aria-hidden="true"
             >
               <path d="M19.54 5.32A16.7 16.7 0 0 0 15.4 4l-.5 1.03a15.4 15.4 0 0 0-5.8 0L8.6 4a16.7 16.7 0 0 0-4.14 1.32C1.84 9.32 1.13 13.2 1.5 17.03a16.8 16.8 0 0 0 5.1 2.6l1.23-1.67a10.1 10.1 0 0 1-1.94-.94l.48-.37c3.74 1.74 7.8 1.74 11.5 0l.5.37c-.62.37-1.27.68-1.95.94l1.23 1.67a16.8 16.8 0 0 0 5.1-2.6c.44-4.44-.75-8.28-3.21-11.71ZM8.47 14.8c-1.1 0-2-.99-2-2.2s.88-2.2 2-2.2 2 .99 2 2.2-.9 2.2-2 2.2Zm7.06 0c-1.1 0-2-.99-2-2.2s.88-2.2 2-2.2 2 .99 2 2.2-.9 2.2-2 2.2Z" />
             </svg>
-          </button>
+          </a>
 
-          {/* Search Button */}
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            className={`nav-action ${activeTab === 'search' ? 'is-active' : ''}`}
+          {/* Search Page Link */}
+          <a
+            href={TAB_PATHS.search}
+            onClick={(e) => handleLinkClick(e, TAB_PATHS.search)}
+            className={`nav-action no-underline ${activeRoute === 'search' ? 'is-active' : ''}`}
             title="Search movies & TV shows"
             aria-label="Search"
-            aria-pressed={activeTab === 'search'}
+            aria-current={activeRoute === 'search' ? 'page' : undefined}
           >
             <Search className="w-4 h-4" />
-          </button>
+          </a>
 
-          {/* Settings Button */}
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className="nav-action"
+          {/* Settings Page Link */}
+          <a
+            href={EXTRA_PATHS.settings}
+            onClick={(e) => handleLinkClick(e, EXTRA_PATHS.settings)}
+            className={`nav-action no-underline ${activeRoute === 'settings' ? 'is-active' : ''}`}
             title="Playback Settings"
             aria-label="Settings"
+            aria-current={activeRoute === 'settings' ? 'page' : undefined}
           >
             <Settings className="w-4 h-4" />
-          </button>
+          </a>
         </div>
       </nav>
     </header>

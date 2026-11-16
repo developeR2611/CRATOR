@@ -617,7 +617,7 @@ export async function getTmdbVideos(
       data = null;
     }
 
-    if (!res.ok) {
+    if (!res.ok || !data || typeof data !== 'object' || !Array.isArray(data.results)) {
       return {
         videos: [],
         error: data?.error || `Failed to load trailers (HTTP ${res.status}).`,
@@ -625,7 +625,7 @@ export async function getTmdbVideos(
     }
 
     return {
-      videos: pickYouTubeTrailers(data?.results),
+      videos: pickYouTubeTrailers(data.results),
     };
   } catch {
     return {
@@ -636,6 +636,26 @@ export async function getTmdbVideos(
 }
 
 const personDetailsCache = new Map<string, PersonDetails>();
+
+// Resolve a TMDB person ID from a cast member's name when ID wasn't initially attached
+export async function searchTmdbPersonId(name: string): Promise<number | null> {
+  const cleanName = String(name || '').trim();
+  if (!cleanName) return null;
+
+  try {
+    const res = await fetch(`/api/tmdb/person/search?query=${encodeURIComponent(cleanName)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = Array.isArray(data?.results) ? data.results : [];
+    const exactMatch = results.find(
+      (r: any) => typeof r?.id === 'number' && String(r.name || '').toLowerCase() === cleanName.toLowerCase()
+    );
+    const best = exactMatch || results.find((r: any) => typeof r?.id === 'number' && r.id > 0);
+    return best ? Number(best.id) : null;
+  } catch {
+    return null;
+  }
+}
 
 // 11. Get TMDB Person Details & Known-For Credits
 export async function getTmdbPerson(
@@ -659,7 +679,7 @@ export async function getTmdbPerson(
       data = null;
     }
 
-    if (!res.ok) {
+    if (!res.ok || !data || typeof data !== 'object' || typeof data.id !== 'number' || data.id <= 0) {
       return {
         person: null,
         error: data?.error || `Failed to load cast details (HTTP ${res.status}).`,

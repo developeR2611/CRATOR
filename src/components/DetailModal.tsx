@@ -38,6 +38,8 @@ import {
   isFutureIsoDate, 
   formatReleaseDate 
 } from '../services/availability';
+import { buildTitlePath } from '../utils/router';
+import { searchTmdbPersonId } from '../services/tmdb';
 
 interface DetailModalProps {
   item: MediaItem | null;
@@ -104,8 +106,10 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   const [heroTrailerConfirmed, setHeroTrailerConfirmed] = useState<boolean>(false);
   const [heroTrailerMuted, setHeroTrailerMuted] = useState<boolean>(true);
   const [heroTrailerBlocked, setHeroTrailerBlocked] = useState<boolean>(false);
+  const [heroTrailerFinished, setHeroTrailerFinished] = useState<boolean>(false);
   const heroTimerRef = useRef<number | null>(null);
   const heroFallbackTimerRef = useRef<number | null>(null);
+  const heroRevealTimerRef = useRef<number | null>(null);
   const heroIframeRef = useRef<HTMLIFrameElement | null>(null);
   const titleOpenedAtRef = useRef<number>(Date.now());
   const isStartingVidRiftRef = useRef<boolean>(false);
@@ -126,17 +130,23 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       window.clearTimeout(heroFallbackTimerRef.current);
       heroFallbackTimerRef.current = null;
     }
+    if (heroRevealTimerRef.current !== null) {
+      window.clearTimeout(heroRevealTimerRef.current);
+      heroRevealTimerRef.current = null;
+    }
     setHeroTrailerActive(false);
     setHeroTrailerConfirmed(false);
   };
 
   // Reset and load details when item changes
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
     titleOpenedAtRef.current = Date.now();
     isStartingVidRiftRef.current = false;
     cancelHeroTrailer();
     setHeroTrailerMuted(true);
     setHeroTrailerBlocked(false);
+    setHeroTrailerFinished(false);
 
     if (!item) {
       setActiveItem(null);
@@ -264,6 +274,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       !item?.id ||
       !leadTrailerKey ||
       heroTrailerBlocked ||
+      heroTrailerFinished ||
       isStartingVidRiftRef.current
     ) {
       return;
@@ -287,13 +298,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         heroTimerRef.current = null;
       }
     };
-  }, [item?.id, leadTrailerKey, heroTrailerBlocked]);
+  }, [item?.id, leadTrailerKey, heroTrailerBlocked, heroTrailerFinished]);
 
-  // Verify YouTube playback started & keep poster visible if browser blocks autoplay or embed fails
+  // Verify YouTube playback started, wait briefly for intro UI buttons to fade behind poster, and restore poster when trailer ends
   useEffect(() => {
     if (!heroTrailerActive || !leadTrailerKey) return;
 
     let confirmedPlayback = false;
+    let isEffectCancelled = false;
 
     const handshakeInterval = window.setInterval(() => {
       if (confirmedPlayback) return;
@@ -306,7 +318,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         setHeroTrailerConfirmed(false);
         setHeroTrailerBlocked(true);
       }
-    }, 5500);
+    }, 6500);
 
     const handleYouTubeMessage = (event: MessageEvent) => {
       if (
@@ -330,6 +342,10 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           window.clearTimeout(heroFallbackTimerRef.current);
           heroFallbackTimerRef.current = null;
         }
+        if (heroRevealTimerRef.current !== null) {
+          window.clearTimeout(heroRevealTimerRef.current);
+          heroRevealTimerRef.current = null;
+        }
         setHeroTrailerActive(false);
         setHeroTrailerConfirmed(false);
         setHeroTrailerBlocked(true);
@@ -343,14 +359,35 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             ? payload.info?.playerState
             : undefined;
 
-      if (playerState === 1) {
+      if (playerState === 1 && !confirmedPlayback) {
         confirmedPlayback = true;
         window.clearInterval(handshakeInterval);
         if (heroFallbackTimerRef.current !== null) {
           window.clearTimeout(heroFallbackTimerRef.current);
           heroFallbackTimerRef.current = null;
         }
-        setHeroTrailerConfirmed(true);
+        // Hold poster for ~2.2s while YouTube's initial top-right buttons & title card fade out
+        heroRevealTimerRef.current = window.setTimeout(() => {
+          if (!isEffectCancelled && !isStartingVidRiftRef.current) {
+            setHeroTrailerConfirmed(true);
+          }
+        }, 2200);
+      }
+
+      // Trailer ended: play once only, then restore poster and hero details cleanly
+      if (playerState === 0) {
+        window.clearInterval(handshakeInterval);
+        if (heroFallbackTimerRef.current !== null) {
+          window.clearTimeout(heroFallbackTimerRef.current);
+          heroFallbackTimerRef.current = null;
+        }
+        if (heroRevealTimerRef.current !== null) {
+          window.clearTimeout(heroRevealTimerRef.current);
+          heroRevealTimerRef.current = null;
+        }
+        setHeroTrailerFinished(true);
+        setHeroTrailerConfirmed(false);
+        setHeroTrailerActive(false);
       }
 
       if (payload.event === 'infoDelivery' && typeof payload.info?.muted === 'boolean') {
@@ -360,11 +397,16 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
     window.addEventListener('message', handleYouTubeMessage);
     return () => {
+      isEffectCancelled = true;
       window.clearInterval(handshakeInterval);
       window.removeEventListener('message', handleYouTubeMessage);
       if (heroFallbackTimerRef.current !== null) {
         window.clearTimeout(heroFallbackTimerRef.current);
         heroFallbackTimerRef.current = null;
+      }
+      if (heroRevealTimerRef.current !== null) {
+        window.clearTimeout(heroRevealTimerRef.current);
+        heroRevealTimerRef.current = null;
       }
     };
   }, [heroTrailerActive, leadTrailerKey]);
@@ -599,15 +641,21 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     setIsPersonLoading(false);
   };
 
-  const handleOpenCastMember = (member: CastMember) => {
+  const handleOpenCastMember = async (member: CastMember) => {
     setSelectedCast(member);
     setPersonDetails(null);
     setPersonError(null);
     setIsBioExpanded(false);
 
     if (!member.id) {
-      setIsPersonLoading(false);
-      setPersonError('Detailed biography is not available for this cast entry yet.');
+      setIsPersonLoading(true);
+      const resolvedId = await searchTmdbPersonId(member.name);
+      if (resolvedId) {
+        loadPersonDetails(resolvedId);
+      } else {
+        setIsPersonLoading(false);
+        setPersonError('Detailed biography is not available for this cast entry yet.');
+      }
       return;
     }
 
@@ -648,9 +696,10 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
   const castMembers = Array.isArray(activeItem.cast) ? activeItem.cast : [];
   const directorName = activeItem.director;
+  const isHeroTrailerShowing = heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#040508] text-[#f3f0ea] select-none animate-fadeIn">
+    <div className="relative min-h-screen w-full bg-[#040508] text-[#f3f0ea] select-none animate-fadeIn">
       {/* 1. Top-Left Circular Glass Back Button */}
       <button
         type="button"
@@ -666,11 +715,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       <div className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden">
         {/* Full-Bleed Poster / Trailer Media Layer */}
         <div className="absolute inset-0 z-0 overflow-hidden" data-hero-poster-area="true">
-          {/* Embedded Auto-Playing Trailer (renders underneath poster until playback is confirmed) */}
+          {/* Embedded Auto-Playing Trailer (renders underneath poster until playback & chrome fade are ready) */}
           {heroTrailerActive && heroTrailer && !heroTrailerBlocked && (
             <div
               className={`absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-700 ${
-                heroTrailerConfirmed ? 'opacity-100' : 'opacity-0'
+                isHeroTrailerShowing ? 'opacity-100' : 'opacity-0'
               }`}
               data-hero-trailer-player="true"
             >
@@ -678,13 +727,17 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 ref={heroIframeRef}
                 id="crator-hero-trailer-iframe"
                 key={`${activeItem.id}-${heroTrailer.key}`}
-                src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(heroTrailer.key)}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${encodeURIComponent(heroTrailer.key)}&enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(heroTrailer.key)}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&iv_load_policy=3&fs=0&disablekb=1&cc_load_policy=0&showinfo=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
                 title={`${activeItem.title} trailer preview`}
                 onLoad={() => {
                   registerHeroYouTubeListeners();
                   window.setTimeout(registerHeroYouTubeListeners, 250);
                 }}
-                className="w-full h-full scale-[1.38] sm:scale-[1.42] origin-center border-0 pointer-events-none"
+                style={{
+                  width: 'max(100%, 177.78vh)',
+                  height: 'max(100%, 56.25vw)',
+                }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.28] sm:scale-[1.32] origin-center border-0 pointer-events-none"
                 allow="autoplay; encrypted-media; picture-in-picture"
                 referrerPolicy="strict-origin-when-cross-origin"
                 tabIndex={-1}
@@ -692,10 +745,10 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             </div>
           )}
 
-          {/* Poster / Backdrop Image (stays visible until trailer playback starts or when unavailable/blocked) */}
+          {/* Poster / Backdrop Image (stays visible until trailer playback starts or when unavailable/blocked/ended) */}
           <div
             className={`absolute inset-0 transition-opacity duration-700 ${
-              heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked
+              isHeroTrailerShowing
                 ? 'opacity-0 pointer-events-none'
                 : 'opacity-100'
             }`}
@@ -718,7 +771,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         </div>
 
         {/* Visible Hero Trailer Mute / Unmute Control */}
-        {heroTrailerActive && heroTrailerConfirmed && !heroTrailerBlocked && (
+        {isHeroTrailerShowing && (
           <button
             type="button"
             onClick={handleToggleHeroMute}
@@ -742,22 +795,33 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         )}
 
         {/* Hero Content Block */}
-        <div className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-6 sm:pb-8 pt-44 sm:pt-60 md:pt-72 space-y-2.5 sm:space-y-3">
-          {/* Kicker Row */}
-          <div className="flex items-center flex-wrap gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
-            <span className="text-white/50 text-base leading-none select-none">—</span>
-            <span className="uppercase">{mediaTypeLabel}</span>
-            <span className="text-white/40">·</span>
-            <span>{activeItem.releaseDate ? formattedReleaseDate.toUpperCase() : (activeItem.releaseYear || 2026)}</span>
-            <span className="text-white/40">·</span>
-            <span className="glass-badge px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest">
-              {ageRatingLabel}
-            </span>
-            <span className="text-white/40">·</span>
-            <span className="uppercase">{runtimeLabel}</span>
+        <div className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-8 sm:pb-10 pt-44 sm:pt-60 md:pt-72">
+          {/* Kicker Row (hidden smoothly while trailer plays so only logo stays visible) */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${
+              isHeroTrailerShowing
+                ? 'grid-rows-[0fr] opacity-0 mb-0 pointer-events-none'
+                : 'grid-rows-[1fr] opacity-100 mb-2.5 sm:mb-3'
+            }`}
+            aria-hidden={isHeroTrailerShowing}
+          >
+            <div className="overflow-hidden">
+              <div className="flex items-center flex-wrap gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
+                <span className="text-white/50 text-base leading-none select-none">—</span>
+                <span className="uppercase">{mediaTypeLabel}</span>
+                <span className="text-white/40">·</span>
+                <span>{activeItem.releaseDate ? formattedReleaseDate.toUpperCase() : (activeItem.releaseYear || 2026)}</span>
+                <span className="text-white/40">·</span>
+                <span className="glass-badge px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest">
+                  {ageRatingLabel}
+                </span>
+                <span className="text-white/40">·</span>
+                <span className="uppercase">{runtimeLabel}</span>
+              </div>
+            </div>
           </div>
 
-          {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) */}
+          {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) — always stays visible during trailer */}
           <div className="py-0.5 min-h-[68px] sm:min-h-[84px] flex items-center">
             {activeItem.logoUrl ? (
               <div className="py-1 max-w-xs sm:max-w-sm md:max-w-md">
@@ -778,93 +842,105 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             )}
           </div>
 
-          {/* Genres row */}
-          <div className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
-            {genresRow}
-          </div>
-
-          {/* Synopsis paragraph */}
-          <p className="text-xs sm:text-sm text-[#d1ced2] leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
-            {activeItem.synopsis}
-          </p>
-
-          {/* Directed by / Created by line */}
-          {directorName && (
-            <div className="flex items-center gap-2 pt-0.5 text-xs">
-              <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
-                {isTv ? 'CREATED BY' : 'DIRECTED BY'}
-              </span>
-              <span className="font-semibold text-white ml-1">
-                {directorName}
-              </span>
-            </div>
-          )}
-
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-2.5 pt-2 flex-wrap">
-            {hideTopPlayButton ? (
-              <div
-                className="glass-panel text-[#f3f0ea] font-semibold px-5 py-3 rounded-xl flex items-center gap-2.5 text-sm"
-                data-unreleased-release-date="true"
-              >
-                <Calendar className="w-4 h-4 text-[#c9c7cc]" />
-                <span>
-                  {!isUnreleased && isTv
-                    ? `Season ${selectedSeasonNumber} Release Date: ${
-                        selectedSeason?.airDate
-                          ? formatReleaseDate(selectedSeason.airDate)
-                          : displayedEpisodes[0]?.releaseDate
-                            ? formatReleaseDate(displayedEpisodes[0].releaseDate)
-                            : 'TBA'
-                      }`
-                    : `Release Date: ${formattedReleaseDate}`}
-                </span>
+          {/* Remaining Hero Details & Actions (hidden smoothly while trailer plays) */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${
+              isHeroTrailerShowing
+                ? 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
+                : 'grid-rows-[1fr] opacity-100 mt-2.5 sm:mt-3'
+            }`}
+            aria-hidden={isHeroTrailerShowing}
+          >
+            <div className="overflow-hidden space-y-2.5 sm:space-y-3">
+              {/* Genres row */}
+              <div className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
+                {genresRow}
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handlePlayCurrent()}
-                className="primary-btn h-11 px-7 rounded-xl text-sm font-bold"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
-              </button>
-            )}
 
-            {/* Plus / Watchlist Button */}
-            <button
-              type="button"
-              onClick={() => onToggleWatchlist(activeItem)}
-              className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
-              title={inWatchlist ? 'In Watchlist' : 'Add to List'}
-              aria-label={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-            >
-              {inWatchlist ? <Check className="w-5 h-5 text-emerald-400" /> : <Plus className="w-5 h-5" />}
-            </button>
+              {/* Synopsis paragraph */}
+              <p className="text-xs sm:text-sm text-[#d1ced2] leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
+                {activeItem.synopsis}
+              </p>
 
-            {/* Share Button */}
-            <button
-              type="button"
-              onClick={handleShare}
-              className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
-              title="Share"
-              aria-label="Share title"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+              {/* Directed by / Created by line */}
+              {directorName && (
+                <div className="flex items-center gap-2 pt-0.5 text-xs">
+                  <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
+                    {isTv ? 'CREATED BY' : 'DIRECTED BY'}
+                  </span>
+                  <span className="font-semibold text-white ml-1">
+                    {directorName}
+                  </span>
+                </div>
+              )}
 
-            {/* Download Button (only when released) */}
-            {!hideTopPlayButton && (
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
-                title="Download offline stream"
-                aria-label="Download offline stream"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            )}
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-2.5 pt-2 flex-wrap">
+                {hideTopPlayButton ? (
+                  <div
+                    className="glass-panel text-[#f3f0ea] font-semibold px-5 py-3 rounded-xl flex items-center gap-2.5 text-sm"
+                    data-unreleased-release-date="true"
+                  >
+                    <Calendar className="w-4 h-4 text-[#c9c7cc]" />
+                    <span>
+                      {!isUnreleased && isTv
+                        ? `Season ${selectedSeasonNumber} Release Date: ${
+                            selectedSeason?.airDate
+                              ? formatReleaseDate(selectedSeason.airDate)
+                              : displayedEpisodes[0]?.releaseDate
+                                ? formatReleaseDate(displayedEpisodes[0].releaseDate)
+                                : 'TBA'
+                          }`
+                        : `Release Date: ${formattedReleaseDate}`}
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handlePlayCurrent()}
+                    className="primary-btn h-11 px-7 rounded-xl text-sm font-bold"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
+                  </button>
+                )}
+
+                {/* Plus / Watchlist Button */}
+                <button
+                  type="button"
+                  onClick={() => onToggleWatchlist(activeItem)}
+                  className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                  title={inWatchlist ? 'In Watchlist' : 'Add to List'}
+                  aria-label={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                >
+                  {inWatchlist ? <Check className="w-5 h-5 text-emerald-400" /> : <Plus className="w-5 h-5" />}
+                </button>
+
+                {/* Share Button */}
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                  title="Share"
+                  aria-label="Share title"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+
+                {/* Download Button (only when released) */}
+                {!hideTopPlayButton && (
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                    title="Download offline stream"
+                    aria-label="Download offline stream"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1083,7 +1159,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       fallbackTitle={member.name}
                       containerClassName="w-full h-full rounded-full"
                       isAvatar={true}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform"
                     />
                   </div>
                   <div className="w-full text-left space-y-0.5">
@@ -1120,11 +1196,15 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
               {(tmdbRecommendations.length > 0 ? tmdbRecommendations : relatedItems).slice(0, 6).map((rel) => (
-                <button
+                <a
                   key={rel.id}
-                  type="button"
-                  onClick={() => onSelectRelated(rel)}
-                  className="group relative flex flex-col cursor-pointer text-left"
+                  href={buildTitlePath(rel)}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    onSelectRelated(rel);
+                  }}
+                  className="group relative flex flex-col cursor-pointer text-left no-underline"
                 >
                   <div className="poster w-full">
                     <ImageWithFallback
@@ -1142,7 +1222,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   <span className="text-[11px] text-[#9a9ba1] text-left">
                     {rel.releaseYear} · {rel.type === 'movie' ? 'Film' : 'TV'}
                   </span>
-                </button>
+                </a>
               ))}
             </div>
           </div>
@@ -1182,7 +1262,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   fallbackTitle={personDetails?.name || selectedCast.name}
                   containerClassName="w-full h-full"
                   isAvatar={true}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
 
@@ -1288,14 +1368,16 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 ) : personDetails && personDetails.knownFor.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
                     {personDetails.knownFor.map((credit) => (
-                      <button
+                      <a
                         key={`${credit.mediaType}-${credit.id}`}
-                        type="button"
-                        onClick={() => {
+                        href={buildTitlePath(credit.mediaItem)}
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                          e.preventDefault();
                           setSelectedCast(null);
                           onSelectRelated(credit.mediaItem);
                         }}
-                        className="group flex flex-col text-left cursor-pointer"
+                        className="group flex flex-col text-left cursor-pointer no-underline"
                       >
                         <div className="poster w-full">
                           <ImageWithFallback
@@ -1314,7 +1396,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                           {credit.releaseYear} · {credit.mediaType === 'movie' ? 'Film' : 'TV'}
                           {credit.character ? ` · ${credit.character}` : ''}
                         </span>
-                      </button>
+                      </a>
                     ))}
                   </div>
                 ) : (
