@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
+import { GlassButton } from './GlassButton';
 
 interface MediaCarouselProps {
   title: string;
@@ -88,15 +89,17 @@ export const MediaCarousel: React.FC<MediaCarouselProps> = ({
 
       {/* Rail Row Wrap with Floating Directional Arrows */}
       <div className="rail-row-wrap">
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('left')}
           disabled={!canScrollLeft}
           className="rail-arrow rail-arrow-left"
           aria-label={`Scroll ${title} left`}
         >
           <ChevronLeft className="w-4 h-4" />
-        </button>
+        </GlassButton>
 
         <div ref={scrollRef} className="card-row">
           {items.map((item, index) => (
@@ -113,15 +116,17 @@ export const MediaCarousel: React.FC<MediaCarouselProps> = ({
           ))}
         </div>
 
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('right')}
           disabled={!canScrollRight}
           className="rail-arrow rail-arrow-right"
           aria-label={`Scroll ${title} right`}
         >
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </GlassButton>
       </div>
     </section>
   );

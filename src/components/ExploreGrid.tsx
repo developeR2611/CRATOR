@@ -9,6 +9,7 @@ import {
 } from '../data/mockData';
 import { MediaCard } from './MediaCard';
 import { availabilityService } from '../services/availability';
+import { GlassButton } from './GlassButton';
 
 interface ExploreGridProps {
   mediaCatalog: MediaItem[];
@@ -97,33 +98,45 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
   };
 
   return (
-    <section className="discover w-full px-4 sm:px-[4.5vw] py-2 sm:py-8 text-left">
+    <section className="discover w-full px-[4.5vw] py-8 text-left">
       {/* 7Movies Toolbar & Filters */}
       <div className="dz-head">
         <div className="dz-filters" role="toolbar" aria-label="Filters">
           {/* Segmented Type Pill */}
           <span className="dz-type" role="group" aria-label="Movies or TV shows">
-            <button 
-              type="button" 
+            <GlassButton
+              variant="navigation"
+              size="sm"
+              shape="pill"
+              active={selectedType === 'all'}
               aria-pressed={selectedType === 'all'}
               onClick={() => setSelectedType('all')}
+              className="dz-type-btn"
             >
               All
-            </button>
-            <button 
-              type="button" 
+            </GlassButton>
+            <GlassButton
+              variant="navigation"
+              size="sm"
+              shape="pill"
+              active={selectedType === 'movie'}
               aria-pressed={selectedType === 'movie'}
               onClick={() => setSelectedType('movie')}
+              className="dz-type-btn"
             >
               Movies
-            </button>
-            <button 
-              type="button" 
+            </GlassButton>
+            <GlassButton
+              variant="navigation"
+              size="sm"
+              shape="pill"
+              active={selectedType === 'series'}
               aria-pressed={selectedType === 'series'}
               onClick={() => setSelectedType('series')}
+              className="dz-type-btn"
             >
               TV shows
-            </button>
+            </GlassButton>
           </span>
 
           {/* Genre Filter */}
@@ -131,7 +144,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <select
               value={selectedGenre}
               onChange={(e) => setSelectedGenre(e.target.value)}
-              className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+              className="dz-filter lg-select appearance-none pr-8"
               aria-label="Genre"
             >
               <option value="All" className="bg-[#111215] text-white">Genre: Any</option>
@@ -147,7 +160,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+              className="dz-filter lg-select appearance-none pr-8"
               aria-label="Year"
             >
               <option value="All" className="bg-[#111215] text-white">Year: Any</option>
@@ -164,7 +177,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <select
               value={selectedRating}
               onChange={(e) => setSelectedRating(e.target.value)}
-              className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+              className="dz-filter lg-select appearance-none pr-8"
               aria-label="Rating"
             >
               <option value="All" className="bg-[#111215] text-white">Rating: Any</option>
@@ -180,7 +193,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <select
               value={selectedLanguage}
               onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+              className="dz-filter lg-select appearance-none pr-8"
               aria-label="Language"
             >
               <option value="All" className="bg-[#111215] text-white">Language: Any</option>
@@ -196,7 +209,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <select
               value={selectedPlatform}
               onChange={(e) => setSelectedPlatform(e.target.value)}
-              className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+              className="dz-filter lg-select appearance-none pr-8"
               aria-label="Service"
             >
               <option value="All" className="bg-[#111215] text-white">Service: Any</option>
@@ -213,7 +226,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="dz-filter appearance-none pr-8 cursor-pointer bg-transparent"
+                className="dz-filter lg-select appearance-none pr-8"
                 aria-label="Sort by"
               >
                 <option value="popularity" className="bg-[#111215] text-white">Sort: Most popular</option>
@@ -226,27 +239,30 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
         </div>
 
         {/* Secondary Meta Bar */}
-        <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-3 sm:pt-4 mt-3.5 sm:mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-2.5 sm:gap-3">
+        <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-4 mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-3">
           <span className="dz-count text-[#c9c7cc] flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71] shadow-[0_0_8px_#2FBF71]" />
             <span>{filteredItems.length} titles ready to stream</span>
           </span>
 
           <span className="dz-bar-actions">
-            <button 
-              type="button" 
+            <GlassButton
+              variant="pill"
+              size="sm"
+              shape="pill"
+              refractive={true}
               onClick={handlePickRandom}
-              className="glass-pill inline-flex items-center gap-2 px-4 py-2 sm:py-1.5 min-h-[40px] sm:min-h-0 rounded-full text-xs font-mono uppercase tracking-wider text-[#f3f0ea] cursor-pointer"
+              className="font-mono uppercase tracking-wider text-[#f3f0ea]"
+              leftIcon={<Dices className="w-3.5 h-3.5" />}
             >
-              <Dices className="w-3.5 h-3.5" />
               <span>Pick one for me</span>
-            </button>
+            </GlassButton>
           </span>
         </div>
       </div>
 
       {/* 7Movies Results Grid */}
-      <div className="dz-grid mt-4 sm:mt-6">
+      <div className="dz-grid mt-6">
         {filteredItems.map((item) => (
           <MediaCard
             key={item.id}

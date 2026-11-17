@@ -40,6 +40,7 @@ import {
 } from '../services/availability';
 import { buildTitlePath } from '../utils/router';
 import { searchTmdbPersonId } from '../services/tmdb';
+import { GlassButton } from './GlassButton';
 
 interface DetailModalProps {
   item: MediaItem | null;
@@ -777,19 +778,22 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   return (
     <div className="relative min-h-screen w-full bg-[#040508] text-[#f3f0ea] select-none animate-fadeIn">
       {/* 1. Top-Left Circular Glass Back Button */}
-      <button
-        type="button"
+      <GlassButton
+        variant="icon"
+        size="icon"
+        shape="circle"
+        refractive={true}
         onClick={handleCloseModal}
-        className="glass-control fixed top-[max(1rem,env(safe-area-inset-top))] left-4 sm:top-6 sm:left-6 z-50 w-11 h-11 rounded-full flex items-center justify-center text-white/95 hover:text-white hover:scale-105 active:scale-95 cursor-pointer"
+        className="!fixed top-6 left-6 z-50 w-11 h-11"
         aria-label="Back"
         title="Back (Esc)"
       >
         <ArrowLeft className="w-5 h-5" />
-      </button>
+      </GlassButton>
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
       <div
-        className="relative w-full min-h-[58dvh] sm:min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
+        className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
         onMouseMove={handleHeroPointerActivity}
         onTouchStart={handleHeroPointerActivity}
       >
@@ -852,31 +856,31 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
         {/* Visible Hero Trailer Mute / Unmute Control */}
         {isHeroTrailerShowing && (
-          <button
-            type="button"
+          <GlassButton
+            variant="secondary"
+            size="md"
+            shape="pill"
+            refractive={true}
             onClick={handleToggleHeroMute}
             data-hero-mute-toggle="true"
             aria-label={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
             title={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
-            className="glass-control absolute top-[max(1rem,env(safe-area-inset-top))] right-4 sm:top-6 sm:right-6 z-20 h-11 px-4 rounded-full flex items-center gap-2 text-xs font-semibold text-white hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            {heroTrailerMuted ? (
-              <>
+            className="!absolute top-6 right-6 z-20 h-11 px-4 text-xs"
+            leftIcon={
+              heroTrailerMuted ? (
                 <VolumeX className="w-4 h-4 text-[#f3f0ea]" />
-                <span>Unmute</span>
-              </>
-            ) : (
-              <>
+              ) : (
                 <Volume2 className="w-4 h-4 text-emerald-400" />
-                <span>Mute</span>
-              </>
-            )}
-          </button>
+              )
+            }
+          >
+            <span>{heroTrailerMuted ? 'Unmute' : 'Mute'}</span>
+          </GlassButton>
         )}
 
         {/* Hero Content Block */}
         <div
-          className="relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-5 sm:pb-10 pt-20 sm:pt-60 md:pt-72"
+          className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-8 sm:pb-10 pt-44 sm:pt-60 md:pt-72"
           onMouseEnter={() => {
             if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
               heroContentHoveredRef.current = true;
@@ -945,7 +949,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           >
             <div className="overflow-hidden space-y-2.5 sm:space-y-3">
               {/* Genres row */}
-              <div className="text-[11px] sm:text-sm font-bold tracking-[0.16em] sm:tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
+              <div className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
                 {genresRow}
               </div>
 
@@ -987,49 +991,60 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <button
-                    type="button"
+                  <GlassButton
+                    variant="primary"
+                    size="lg"
+                    refractive={true}
                     onClick={() => handlePlayCurrent()}
-                    className="primary-btn h-11 px-5 sm:px-7 rounded-xl text-sm font-bold"
+                    className="h-11 px-7 rounded-xl text-sm font-bold"
+                    leftIcon={<Play className="w-4 h-4 fill-current" />}
                   >
-                    <Play className="w-4 h-4 fill-current" />
                     <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
-                  </button>
+                  </GlassButton>
                 )}
 
                 {/* Plus / Watchlist Button */}
-                <button
-                  type="button"
+                <GlassButton
+                  variant="icon"
+                  size="icon"
+                  shape="square"
+                  refractive={true}
                   onClick={() => onToggleWatchlist(activeItem)}
-                  className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                  className="w-11 h-11"
                   title={inWatchlist ? 'In Watchlist' : 'Add to List'}
                   aria-label={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
                 >
                   {inWatchlist ? <Check className="w-5 h-5 text-emerald-400" /> : <Plus className="w-5 h-5" />}
-                </button>
+                </GlassButton>
 
                 {/* Share Button */}
-                <button
-                  type="button"
+                <GlassButton
+                  variant="icon"
+                  size="icon"
+                  shape="square"
+                  refractive={true}
                   onClick={handleShare}
-                  className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                  className="w-11 h-11"
                   title="Share"
                   aria-label="Share title"
                 >
                   <Share2 className="w-4 h-4" />
-                </button>
+                </GlassButton>
 
                 {/* Download Button (only when released) */}
                 {!hideTopPlayButton && (
-                  <button
-                    type="button"
+                  <GlassButton
+                    variant="icon"
+                    size="icon"
+                    shape="square"
+                    refractive={true}
                     onClick={handleDownload}
-                    className="glass-control w-11 h-11 rounded-xl flex items-center justify-center text-white cursor-pointer"
+                    className="w-11 h-11"
                     title="Download offline stream"
                     aria-label="Download offline stream"
                   >
                     <Download className="w-4 h-4" />
-                  </button>
+                  </GlassButton>
                 )}
               </div>
             </div>
@@ -1038,18 +1053,18 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </div>
 
       {/* 3. CONTENT SECTIONS */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-3 sm:pt-8 pb-4 sm:pb-16 space-y-7 sm:space-y-12">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 pt-8 pb-16 space-y-12">
         {/* ================================================================= */}
         {/* FOR TV SERIES: CONTINUE THE STORY / Episodes */}
         {/* ================================================================= */}
         {isTv && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="flex items-end justify-between border-b border-white/10 pb-3 sm:pb-4 flex-wrap gap-3 sm:gap-4">
+          <div className="space-y-6">
+            <div className="flex items-end justify-between border-b border-white/10 pb-4 flex-wrap gap-4">
               <div>
                 <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-1">
                   CONTINUE THE STORY
                 </span>
-                <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight flex items-center gap-2.5">
+                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight flex items-center gap-2.5">
                   <span>Episodes</span>
                   {isLoadingSeasons && (
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -1058,27 +1073,26 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               </div>
 
               {/* Season Selector Controls */}
-              <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
+              <div className="flex flex-col items-end">
                 <span className="text-[10px] font-mono tracking-widest text-[#8e8a91] uppercase mb-1">
                   SEASON
                 </span>
-                <div className="relative z-20 flex items-center gap-2 flex-wrap justify-start sm:justify-end w-full sm:w-auto">
+                <div className="relative z-20 flex items-center gap-2 flex-wrap justify-end">
                   {seasons.length > 1 && seasons.length <= 8 && (
                     <div className="flex items-center gap-1.5 mr-1 flex-wrap">
                       {seasons.map((s) => (
-                        <button
+                        <GlassButton
                           key={`pill-${s.seasonNumber}`}
-                          type="button"
+                          variant="pill"
+                          size="sm"
+                          shape="pill"
+                          active={selectedSeasonNumber === s.seasonNumber}
                           aria-pressed={selectedSeasonNumber === s.seasonNumber}
                           onClick={() => handleSeasonChange(s.seasonNumber)}
-                          className={`px-3.5 py-2 sm:py-1.5 rounded-full text-xs transition-all cursor-pointer ${
-                            selectedSeasonNumber === s.seasonNumber
-                              ? 'glass-pill-active'
-                              : 'glass-pill text-[#c9c7cc]'
-                          }`}
+                          className="px-3.5"
                         >
                           S{s.seasonNumber}
-                        </button>
+                        </GlassButton>
                       ))}
                     </div>
                   )}
@@ -1088,7 +1102,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       value={selectedSeasonNumber}
                       onChange={(e) => handleSeasonChange(Number(e.target.value))}
                       aria-label="Select season"
-                      className="glass-control appearance-none rounded-full px-4 py-2.5 sm:py-2 pr-9 text-sm sm:text-xs font-semibold text-white cursor-pointer"
+                      className="lg-select rounded-full px-4 py-2 pr-9 text-xs text-white"
                     >
                       {seasons.map((s) => (
                         <option key={s.seasonNumber} value={s.seasonNumber} className="bg-[#0e1118] text-white">
@@ -1130,7 +1144,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       }}
                       role={epUnreleased ? undefined : 'button'}
                       tabIndex={epUnreleased ? undefined : 0}
-                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-2xl ${
+                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-2xl ${
                         epUnreleased
                           ? 'opacity-80 cursor-default'
                           : 'glass-hover cursor-pointer'
@@ -1147,9 +1161,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                         />
                         {!epUnreleased && (
                           <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 flex items-center justify-center transition-colors">
-                            <div className="w-9 h-9 rounded-full glass-pill-active flex items-center justify-center shadow-lg">
-                              <Play className="w-4 h-4 fill-current ml-0.5" />
-                            </div>
+                            <span className="lg-btn lg-btn--primary lg-btn--shape-circle w-9 h-9 flex items-center justify-center pointer-events-none">
+                              <span className="lg-btn__content">
+                                <Play className="w-4 h-4 fill-current ml-0.5" />
+                              </span>
+                            </span>
                           </div>
                         )}
                         <span className="glass-badge absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono text-white">
@@ -1184,8 +1200,8 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                             {ep.releaseDate ? `Airs ${formatReleaseDate(ep.releaseDate)}` : 'Coming Soon'}
                           </span>
                         ) : (
-                          <span className="glass-pill inline-flex items-center px-4 py-2 rounded-full group-hover:!bg-white group-hover:!text-[#0b0d12] text-white text-xs font-bold transition-all">
-                            Stream
+                          <span className="lg-btn lg-btn--pill lg-btn--size-sm lg-btn--shape-pill group-hover:!bg-[var(--lg-bg-primary-hover)] group-hover:!border-[var(--lg-border-primary-hover)] group-hover:!text-[#0b0d12]">
+                            <span className="lg-btn__content">Stream</span>
                           </span>
                         )}
                       </div>
@@ -1217,24 +1233,24 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* FEATURING & Cast Section */}
         {/* ================================================================= */}
         {castMembers.length > 0 && (
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-6">
             <div className="space-y-1">
               <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase flex items-center gap-2">
                 <span className="text-white/50">—</span>
                 <span>FEATURING</span>
               </span>
-              <div className="flex items-baseline justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
-                <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
+              <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
+                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
                   Cast
                 </h2>
-                <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#9a9ba1] uppercase">
-                  {castMembers.length} CREDITED · TAP FOR BIO
+                <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase">
+                  {castMembers.length} CREDITED · CLICK FOR BIO
                 </span>
               </div>
             </div>
 
             {/* Cast Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {castMembers.map((member, idx) => (
                 <button
                   key={`${member.id || member.name}-${idx}`}
@@ -1242,7 +1258,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   onClick={() => handleOpenCastMember(member)}
                   data-cast-card="true"
                   aria-label={`View details for ${member.name}`}
-                  className="glass-surface glass-hover flex flex-col items-start gap-2.5 p-2.5 sm:p-3 rounded-2xl group cursor-pointer text-left"
+                  className="glass-surface glass-hover lg-card-btn flex flex-col items-start gap-2.5 p-3 rounded-2xl group cursor-pointer text-left"
                 >
                   <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/20 shadow-md">
                     <ImageWithFallback
@@ -1271,7 +1287,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* Recommendations ("More Like This") */}
         {/* ================================================================= */}
         {(tmdbRecommendations.length > 0 || relatedItems.length > 0) && (
-          <div className="space-y-4 sm:space-y-6 pt-4 sm:pt-6 border-t border-white/10">
+          <div className="space-y-6 pt-6 border-t border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase block mb-1">
@@ -1283,7 +1299,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
               {(tmdbRecommendations.length > 0 ? tmdbRecommendations : relatedItems).slice(0, 6).map((rel) => (
                 <a
                   key={rel.id}
@@ -1323,27 +1339,30 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       {/* ================================================================= */}
       {selectedCast && (
         <div
-          className="glass-backdrop fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-6 animate-fadeIn"
+          className="glass-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 animate-fadeIn"
           onClick={() => setSelectedCast(null)}
           role="dialog"
           aria-modal="true"
           aria-label={`${selectedCast.name} details`}
         >
           <div
-            className="glass-panel relative w-full max-w-3xl max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl p-5 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-8 space-y-5 sm:space-y-6 text-left"
+            className="glass-panel relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl p-6 sm:p-8 space-y-6 text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
+            <GlassButton
+              variant="icon"
+              size="icon"
+              shape="circle"
+              refractive={true}
               onClick={() => setSelectedCast(null)}
               aria-label="Close cast details"
-              className="glass-control absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white cursor-pointer"
+              className="!absolute top-4 right-4 w-9 h-9"
             >
               <X className="w-4 h-4" />
-            </button>
+            </GlassButton>
 
             {/* Top Profile Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 pr-12 sm:pr-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pr-8">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-white/10 border border-white/15 shrink-0 shadow-lg">
                 <ImageWithFallback
                   src={personDetails?.profileUrl || selectedCast.avatar}
@@ -1401,13 +1420,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 <div className="glass-surface rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-[#c9c7cc]">{personError}</p>
                   {selectedCast.id && (
-                    <button
-                      type="button"
+                    <GlassButton
+                      variant="secondary"
+                      size="sm"
+                      shape="pill"
                       onClick={() => loadPersonDetails(selectedCast.id!)}
-                      className="glass-pill px-3.5 py-1.5 rounded-full text-white text-xs font-semibold cursor-pointer"
                     >
                       Retry
-                    </button>
+                    </GlassButton>
                   )}
                 </div>
               ) : personDetails?.biography ? (
@@ -1418,13 +1438,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       : `${personDetails.biography.slice(0, 360).trimEnd()}...`}
                   </p>
                   {personDetails.biography.length > 360 && (
-                    <button
-                      type="button"
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      shape="pill"
                       onClick={() => setIsBioExpanded((prev) => !prev)}
-                      className="text-xs font-semibold text-white hover:text-emerald-300 transition-colors cursor-pointer"
                     >
                       {isBioExpanded ? 'Show less' : 'Read full biography'}
-                    </button>
+                    </GlassButton>
                   )}
                 </div>
               ) : (

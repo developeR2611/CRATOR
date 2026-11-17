@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { NEW_EPISODES, NewEpisodeItem } from '../data/mockData';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { GlassButton } from './GlassButton';
 
 interface NewEpisodesProps {
   mediaCatalog: MediaItem[];
@@ -36,14 +37,16 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
 
       {/* Rail Row Wrap with Arrows */}
       <div className="rail-row-wrap">
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('left')}
           className="rail-arrow rail-arrow-left"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
-        </button>
+        </GlassButton>
 
         <div ref={scrollRef} className="card-row">
           {NEW_EPISODES.map((ep: NewEpisodeItem) => {
@@ -86,18 +89,20 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
 
                   {/* Play hover button */}
                   <div className="absolute inset-0 z-[2] flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
-                    <button
-                      type="button"
+                    <GlassButton
+                      variant="primary"
+                      size="icon"
+                      shape="circle"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (media) onPlay(media);
                       }}
-                      className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform pointer-events-auto cursor-pointer"
+                      className="w-11 h-11 pointer-events-auto"
                       title="Play Episode"
                       aria-label={`Play ${ep.showTitle} ${ep.seasonEpisode}`}
                     >
                       <Play className="w-4 h-4 fill-current ml-0.5" />
-                    </button>
+                    </GlassButton>
                   </div>
 
                   {/* Bottom details on poster */}
@@ -118,14 +123,16 @@ export const NewEpisodes: React.FC<NewEpisodesProps> = ({
           })}
         </div>
 
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('right')}
           className="rail-arrow rail-arrow-right"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </GlassButton>
       </div>
     </section>
   );

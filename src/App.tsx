@@ -10,9 +10,8 @@ import { DetailModal } from './components/DetailModal';
 import { VideoPlayer } from './components/VideoPlayer';
 import { SearchView } from './components/SearchView';
 import { WatchlistView } from './components/WatchlistView';
-import { CommunityModal } from './components/CommunityModal';
-import { ProfileModal } from './components/ProfileModal';
 import { Toast } from './components/Toast';
+import { GlassButton } from './components/GlassButton';
 
 import {
   MEDIA_CATALOG,
@@ -39,7 +38,6 @@ import {
 import { isMediaUnreleased } from './services/availability';
 import {
   AppRoute,
-  EXTRA_PATHS,
   TAB_PATHS,
   buildTitlePath,
   buildWatchPath,
@@ -456,12 +454,6 @@ export default function App() {
       case 'search':
         document.title = route.query ? `Search: ${route.query} — CRATOR` : 'Search — CRATOR';
         break;
-      case 'settings':
-        document.title = 'Stream Settings — CRATOR';
-        break;
-      case 'community':
-        document.title = 'Community — CRATOR';
-        break;
       case 'title':
         document.title = activeRouteMedia ? `${activeRouteMedia.title} — CRATOR` : 'Title Details — CRATOR';
         break;
@@ -716,28 +708,29 @@ export default function App() {
   };
 
   const renderRouteLoading = (label: string) => (
-    <div className="page-shell min-h-[55dvh] sm:min-h-[82dvh] w-full flex flex-col items-center justify-center px-4">
-      <div className="glass-panel rounded-2xl p-5 sm:p-8 max-w-md w-full text-center space-y-4">
+    <div className="min-h-[82vh] w-full flex flex-col items-center justify-center px-4">
+      <div className="glass-panel rounded-2xl p-8 max-w-md w-full text-center space-y-4">
         <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
         <div className="space-y-1">
           <h2 className="font-display font-bold text-lg text-white">{label}</h2>
           <p className="text-xs text-[#9a9ba1] font-mono">Loading title details...</p>
         </div>
-        <button
-          type="button"
+        <GlassButton
+          variant="secondary"
+          size="sm"
           onClick={() => goBack(TAB_PATHS.home)}
-          className="secondary-btn h-11 sm:h-9 px-5 sm:px-4 rounded-xl text-xs mx-auto"
+          className="mx-auto"
+          leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back</span>
-        </button>
+        </GlassButton>
       </div>
     </div>
   );
 
   const renderRouteError = (title: string, message: string, showRetry = true) => (
-    <div className="page-shell min-h-[55dvh] sm:min-h-[82dvh] w-full flex flex-col items-center justify-center px-4 pt-20">
-      <div className="glass-panel rounded-2xl p-5 sm:p-8 max-w-md w-full text-center space-y-4 sm:space-y-5">
+    <div className="min-h-[82vh] w-full flex flex-col items-center justify-center px-4 pt-20">
+      <div className="glass-panel rounded-2xl p-8 max-w-md w-full text-center space-y-5">
         <div className="glass-surface w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-white">
           <Film className="w-6 h-6" />
         </div>
@@ -747,21 +740,23 @@ export default function App() {
         </div>
         <div className="flex items-center justify-center gap-3 flex-wrap">
           {showRetry && (
-            <button
-              type="button"
+            <GlassButton
+              variant="secondary"
+              size="sm"
               onClick={() => setRouteRetryToken((n) => n + 1)}
-              className="secondary-btn h-11 sm:h-9 px-5 sm:px-4 rounded-xl text-xs"
             >
               Retry
-            </button>
+            </GlassButton>
           )}
-          <a
+          <GlassButton
             href={TAB_PATHS.home}
             onClick={(e) => handleLinkClick(e, TAB_PATHS.home)}
-            className="primary-btn h-11 sm:h-9 px-5 rounded-xl text-xs no-underline"
+            variant="primary"
+            size="sm"
+            refractive={true}
           >
             Back to Home
-          </a>
+          </GlassButton>
         </div>
       </div>
     </div>
@@ -785,7 +780,7 @@ export default function App() {
         {/* HOME PAGE (/)                                                     */}
         {/* ================================================================= */}
         {route.name === 'home' && (
-          <div className="pb-2 sm:pb-12">
+          <div className="pb-12">
             <HeroSection
               featuredItems={heroFeaturedItems}
               isLoading={isHeroLoading}
@@ -855,22 +850,25 @@ export default function App() {
               />
             )}
 
-            <section className="px-4 sm:px-[4.5vw] pt-1 sm:pt-4">
-              <div className="glass-panel glass-hover rounded-2xl px-4 py-4 sm:px-8 sm:py-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <section className="px-[4.5vw] pt-4">
+              <div className="glass-panel glass-hover rounded-2xl px-6 py-6 sm:px-8 sm:py-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <p className="eyebrow">Full library</p>
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-white">
                     Filter by genre, year, language &amp; platform
                   </h2>
                 </div>
-                <a
+                <GlassButton
                   href={TAB_PATHS.discover}
                   onClick={(e) => handleLinkClick(e, TAB_PATHS.discover)}
-                  className="primary-btn w-full sm:w-auto min-h-[44px] sm:min-h-0 shrink-0 no-underline"
+                  variant="primary"
+                  size="lg"
+                  refractive={true}
+                  className="shrink-0"
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
                   <span>Browse Discover</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
+                </GlassButton>
               </div>
             </section>
           </div>
@@ -880,7 +878,7 @@ export default function App() {
         {/* MOVIES PAGE (/movies)                                             */}
         {/* ================================================================= */}
         {route.name === 'movies' && (
-          <div className="page-shell pt-24 pb-20 space-y-2 sm:space-y-6">
+          <div className="pt-24 pb-20 space-y-6">
             <MediaCarousel
               eyebrow="Feature films"
               title="Trending movies"
@@ -906,7 +904,7 @@ export default function App() {
         {/* TV SHOWS PAGE (/tv)                                               */}
         {/* ================================================================= */}
         {route.name === 'tv' && (
-          <div className="page-shell pt-24 pb-20 space-y-2 sm:space-y-6">
+          <div className="pt-24 pb-20 space-y-6">
             <NewEpisodes
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -938,7 +936,7 @@ export default function App() {
         {/* DISCOVER PAGE (/discover)                                         */}
         {/* ================================================================= */}
         {route.name === 'discover' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="pt-24 pb-20">
             <ExploreGrid
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -953,7 +951,7 @@ export default function App() {
         {/* MY LIST PAGE (/my-list)                                           */}
         {/* ================================================================= */}
         {route.name === 'mylist' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="pt-24 pb-20">
             <WatchlistView
               watchlistIds={watchlistIds}
               mediaCatalog={allCatalogItems}
@@ -973,7 +971,7 @@ export default function App() {
         {/* SEARCH PAGE (/search?q=...)                                       */}
         {/* ================================================================= */}
         {route.name === 'search' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="pt-24 pb-20">
             <SearchView
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -991,29 +989,6 @@ export default function App() {
               }}
             />
           </div>
-        )}
-
-        {/* ================================================================= */}
-        {/* SETTINGS PAGE (/settings)                                         */}
-        {/* ================================================================= */}
-        {route.name === 'settings' && (
-          <ProfileModal
-            standalone={true}
-            onClose={() => goBack(TAB_PATHS.home)}
-            onShowToast={showToast}
-            onRefreshFeeds={() => refreshHomePage(true)}
-          />
-        )}
-
-        {/* ================================================================= */}
-        {/* COMMUNITY PAGE (/community)                                       */}
-        {/* ================================================================= */}
-        {route.name === 'community' && (
-          <CommunityModal
-            standalone={true}
-            onClose={() => goBack(TAB_PATHS.home)}
-            onShowToast={showToast}
-          />
         )}
 
         {/* ================================================================= */}
@@ -1052,7 +1027,6 @@ export default function App() {
               onViewDetails={openDetailsPage}
               onNextEpisode={handleNextEpisode}
               hasNextEpisode={hasNextEpisode}
-              onOpenSettings={() => navigate(EXTRA_PATHS.settings)}
               onProgress={handlePlayerProgress}
               onEpisodeChange={(season, ep) => {
                 const mediaType = isItemTv(activeRouteMedia) ? 'tv' : 'movie';
@@ -1090,7 +1064,7 @@ export default function App() {
       {/* Site Footer */}
       {!hideFooter && (
         <footer className="site-footer">
-          <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4 pb-4 md:pb-6 border-b border-white/10">
+          <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-white/10">
             <div className="flex items-center gap-3">
               <a
                 href={TAB_PATHS.home}
@@ -1104,31 +1078,19 @@ export default function App() {
             </div>
 
             <div className="flex items-center flex-wrap gap-2 text-xs text-[#c9c7cc]">
-              <a
-                href={EXTRA_PATHS.community}
-                onClick={(e) => handleLinkClick(e, EXTRA_PATHS.community)}
-                className="glass-pill inline-flex items-center min-h-[38px] sm:min-h-0 px-3 py-2 sm:py-1.5 rounded-full hover:text-white transition-colors cursor-pointer no-underline"
-              >
-                Telegram Community
-              </a>
-              <a
-                href={EXTRA_PATHS.settings}
-                onClick={(e) => handleLinkClick(e, EXTRA_PATHS.settings)}
-                className="glass-pill inline-flex items-center min-h-[38px] sm:min-h-0 px-3 py-2 sm:py-1.5 rounded-full hover:text-white transition-colors cursor-pointer no-underline"
-              >
-                Stream Settings
-              </a>
-              <button
-                type="button"
+              <GlassButton
+                variant="pill"
+                size="sm"
+                shape="pill"
+                loading={isRefreshingHome}
                 onClick={() => refreshHomePage(true)}
-                className="glass-pill inline-flex items-center min-h-[38px] sm:min-h-0 px-3 py-2 sm:py-1.5 rounded-full hover:text-white transition-colors cursor-pointer"
               >
                 {isRefreshingHome ? 'Refreshing...' : 'Refresh Feeds'}
-              </button>
+              </GlassButton>
             </div>
           </div>
 
-          <div className="w-full pt-4 md:pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-3 text-[11px] text-[#77737a]">
+          <div className="w-full pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[11px] text-[#77737a]">
             <p>
               CRATOR does not store any files on our server, we only link to media hosted on 3rd party services.
             </p>

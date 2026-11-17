@@ -1,21 +1,19 @@
 import React from 'react';
-import { 
-  Home, 
-  Film, 
-  Tv, 
-  Sparkles, 
-  Search, 
-  Bookmark, 
-  Send, 
-  Settings, 
-  User, 
+import {
+  Home,
+  Film,
+  Tv,
+  Sparkles,
+  Search,
+  Bookmark,
   Compass,
   Menu,
   X,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { StreamingPlatform } from '../types';
 import { PLATFORMS_LIST } from '../data/mockData';
+import { GlassButton } from './GlassButton';
 
 export type NavTab = 'home' | 'movies' | 'series' | 'anime' | 'search' | 'watchlist' | 'explore' | 'platform';
 
@@ -25,8 +23,6 @@ interface SidebarProps {
   selectedPlatform: StreamingPlatform | null;
   onSelectPlatform: (platform: StreamingPlatform) => void;
   watchlistCount: number;
-  onOpenCommunity: () => void;
-  onOpenProfile: () => void;
   mobileMenuOpen: boolean;
   onToggleMobileMenu: () => void;
   onRefreshHome?: () => void;
@@ -39,8 +35,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedPlatform,
   onSelectPlatform,
   watchlistCount,
-  onOpenCommunity,
-  onOpenProfile,
   mobileMenuOpen,
   onToggleMobileMenu,
   onRefreshHome,
@@ -58,8 +52,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile Top Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-[#08060D]/90 backdrop-blur-md border-b border-purple-900/20 px-4 flex items-center justify-between">
-        <button 
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 glass-panel !rounded-none border-x-0 border-t-0 px-4 flex items-center justify-between">
+        <GlassButton
+          variant="ghost"
+          size="sm"
+          shape="pill"
           onClick={() => {
             if (currentTab === 'home') {
               onRefreshHome?.();
@@ -67,103 +64,115 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onSelectTab('home');
             }
           }}
-          className="flex items-center gap-2.5 focus:outline-none"
+          className="!px-2.5"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
-            <span className="font-display font-black text-lg text-white">C</span>
-          </div>
-          <span className="font-display font-black text-xl tracking-wider text-white">CRATOR</span>
-        </button>
+          <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg">
+            <span className="font-display font-black text-base text-white">C</span>
+          </span>
+          <span className="font-display font-black text-lg tracking-wider text-white">CRATOR</span>
+        </GlassButton>
 
         <div className="flex items-center gap-1.5">
-          <button
+          <GlassButton
+            variant="icon"
+            size="icon"
+            shape="circle"
             onClick={() => onRefreshHome?.()}
             disabled={isRefreshingHome}
-            className="p-2 rounded-lg text-purple-200/80 hover:text-white hover:bg-purple-900/30 transition-colors disabled:opacity-50 cursor-pointer"
+            className="!w-9 !h-9"
             title="Refresh Feeds"
             aria-label="Refresh feeds"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshingHome ? 'animate-spin text-purple-400' : ''}`} />
-          </button>
-          <button
+            <RefreshCw className={`w-4 h-4 ${isRefreshingHome ? 'animate-spin text-orange-400' : ''}`} />
+          </GlassButton>
+          <GlassButton
+            variant="icon"
+            size="icon"
+            shape="circle"
             onClick={() => onSelectTab('search')}
-            className="p-2 rounded-lg text-purple-200/80 hover:text-white hover:bg-purple-900/30 transition-colors"
+            className="!w-9 !h-9"
             title="Search"
+            aria-label="Search"
           >
-            <Search className="w-5 h-5" />
-          </button>
-          <button
+            <Search className="w-4 h-4" />
+          </GlassButton>
+          <GlassButton
+            variant="icon"
+            size="icon"
+            shape="circle"
             onClick={onToggleMobileMenu}
-            className="p-2 rounded-lg text-purple-200/80 hover:text-white hover:bg-purple-900/30 transition-colors"
+            className="!w-9 !h-9"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </GlassButton>
         </div>
       </header>
 
       {/* Mobile Drawer Backdrop */}
       {mobileMenuOpen && (
-        <div 
+        <div
           onClick={onToggleMobileMenu}
-          className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity"
+          className="glass-backdrop lg:hidden fixed inset-0 z-40 transition-opacity"
         />
       )}
 
       {/* Main Persistent Sidebar (Desktop & Mobile Slide-in) */}
-      <aside 
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0B0814] border-r border-purple-950/40 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-50 w-64 glass-panel !rounded-none border-y-0 border-l-0 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Top: Logo & Main Navigation */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-5 space-y-6">
           {/* Brand Identity */}
-          <div className="px-2 pt-1 pb-2 flex items-center justify-between">
-            <button
+          <div className="px-2 pt-1 pb-2 flex items-center justify-between gap-2">
+            <GlassButton
+              variant="ghost"
+              size="md"
               onClick={() => {
                 onSelectTab('home');
                 if (mobileMenuOpen) onToggleMobileMenu();
               }}
-              className="flex items-center gap-3 group text-left focus:outline-none"
+              className="!h-auto !py-1.5 !px-2 justify-start"
             >
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-fuchsia-500 p-0.5 shadow-lg shadow-purple-600/30 group-hover:shadow-purple-500/50 transition-shadow">
-                <div className="w-full h-full bg-[#0B0814] rounded-[10px] flex items-center justify-center">
-                  <span className="font-display font-black text-xl bg-gradient-to-tr from-purple-400 to-fuchsia-300 bg-clip-text text-transparent">
-                    C
-                  </span>
-                </div>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shrink-0">
+                <span className="font-display font-black text-lg text-white">C</span>
               </div>
-              <div className="flex flex-col">
-                <span className="font-display font-black text-xl tracking-wider text-white group-hover:text-purple-300 transition-colors">
-                  CRATOR
-                </span>
-                <span className="text-[10px] tracking-widest text-purple-400 font-medium uppercase">
-                  Cinematic 4K
-                </span>
+              <div className="flex flex-col text-left">
+                <span className="font-display font-black text-lg tracking-wider text-white">CRATOR</span>
+                <span className="text-[10px] tracking-widest text-[#9a9ba1] font-mono uppercase">Cinematic 4K</span>
               </div>
-            </button>
+            </GlassButton>
 
             {mobileMenuOpen && (
-              <button
+              <GlassButton
+                variant="icon"
+                size="icon"
+                shape="circle"
                 onClick={onToggleMobileMenu}
-                className="lg:hidden p-1.5 rounded-lg text-purple-300/70 hover:text-white hover:bg-purple-900/30"
+                className="lg:hidden !w-8 !h-8"
+                aria-label="Close navigation menu"
               >
-                <X className="w-5 h-5" />
-              </button>
+                <X className="w-4 h-4" />
+              </GlassButton>
             )}
           </div>
 
           {/* Primary Navigation */}
-          <div className="space-y-1">
-            <span className="px-3 text-[11px] font-semibold text-purple-300/50 uppercase tracking-wider block mb-2">
+          <div className="space-y-1.5">
+            <span className="px-3 text-[11px] font-mono text-[#8a8890] uppercase tracking-wider block mb-2">
               Menu
             </span>
             {primaryNavItems.map((item) => {
               const isActive = currentTab === item.id;
               return (
-                <button
+                <GlassButton
                   key={item.id}
+                  variant="navigation"
+                  shape="default"
+                  active={isActive}
+                  fullWidth={true}
                   onClick={() => {
                     if (item.id === 'home' && isActive) {
                       onRefreshHome?.();
@@ -172,158 +181,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }
                     if (mobileMenuOpen) onToggleMobileMenu();
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group cursor-pointer ${
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-600/30 to-purple-800/20 text-white border border-purple-500/30 shadow-sm shadow-purple-900/30'
-                      : 'text-purple-200/70 hover:text-white hover:bg-purple-950/40'
-                  }`}
+                  className="justify-between !px-3.5"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={`transition-colors ${isActive ? 'text-purple-400' : 'text-purple-400/60 group-hover:text-purple-300'}`}>
+                  <span className="flex items-center gap-3 w-full justify-between">
+                    <span className="flex items-center gap-3">
                       {item.icon}
+                      <span>{item.label}</span>
                     </span>
-                    <span>{item.label}</span>
-                  </div>
-
-                  {item.id === 'home' && isActive ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRefreshHome?.();
-                      }}
-                      title="Refresh Feeds"
-                      className="p-1 rounded text-purple-400/70 hover:text-purple-200 hover:bg-purple-900/40 transition-colors"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingHome ? 'animate-spin text-purple-300' : ''}`} />
-                    </span>
-                  ) : typeof item.badge === 'number' && item.badge > 0 ? (
-                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-600 text-white">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </button>
+                    {typeof item.badge === 'number' && item.badge > 0 && (
+                      <span className="glass-badge px-2 py-0.5 text-[11px] font-semibold rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </span>
+                </GlassButton>
               );
             })}
           </div>
 
           {/* Platforms Section */}
-          <div className="space-y-1.5 pt-2 border-t border-purple-950/40">
+          <div className="space-y-1.5 pt-2 border-t border-white/10">
             <div className="px-3 flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-purple-300/50 uppercase tracking-wider">
+              <span className="text-[11px] font-mono text-[#8a8890] uppercase tracking-wider">
                 Platforms
               </span>
-              <button 
+              <GlassButton
+                variant="ghost"
+                size="sm"
+                shape="pill"
                 onClick={() => {
                   onSelectTab('explore');
                   if (mobileMenuOpen) onToggleMobileMenu();
                 }}
-                className="text-[11px] text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+                className="!h-6 !px-2 text-[11px]"
+                leftIcon={<Compass className="w-3 h-3" />}
               >
-                <Compass className="w-3 h-3" />
                 <span>All</span>
-              </button>
+              </GlassButton>
             </div>
 
             <div className="space-y-1">
               {PLATFORMS_LIST.map((platform) => {
                 const isSelected = currentTab === 'platform' && selectedPlatform === platform.name;
                 return (
-                  <button
+                  <GlassButton
                     key={platform.name}
+                    variant="navigation"
+                    size="sm"
+                    active={isSelected}
+                    fullWidth={true}
                     onClick={() => {
                       onSelectPlatform(platform.name);
                       if (mobileMenuOpen) onToggleMobileMenu();
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
-                      isSelected
-                        ? 'bg-purple-900/40 text-white border border-purple-500/40'
-                        : 'text-purple-200/60 hover:text-white hover:bg-purple-950/30'
-                    }`}
+                    className="justify-start !px-3"
+                    leftIcon={
+                      <span
+                        className="w-2 h-2 rounded-full inline-block"
+                        style={{ backgroundColor: platform.color }}
+                      />
+                    }
                   >
-                    <div 
-                      className="w-2 h-2 rounded-full transition-transform group-hover:scale-125" 
-                      style={{ backgroundColor: platform.color }}
-                    />
                     <span className="truncate">{platform.name}</span>
-                  </button>
+                  </GlassButton>
                 );
               })}
             </div>
           </div>
         </div>
-
-        {/* Bottom Section: Telegram Community & User Profile */}
-        <div className="p-3 border-t border-purple-950/40 space-y-2 bg-[#08060D]/60 backdrop-blur-sm">
-          {/* Telegram / Community banner */}
-          <button
-            onClick={() => {
-              onOpenCommunity();
-              if (mobileMenuOpen) onToggleMobileMenu();
-            }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-900/30 text-purple-200 text-xs transition-colors group"
-          >
-            <div className="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
-              <Send className="w-3.5 h-3.5" />
-            </div>
-            <div className="flex flex-col text-left overflow-hidden">
-              <span className="font-semibold text-white group-hover:text-purple-300 transition-colors">
-                CRATOR Community
-              </span>
-              <span className="text-[10px] text-purple-300/60">48K+ members online</span>
-            </div>
-          </button>
-
-          {/* Account & Settings button */}
-          <div className="flex items-center justify-between pt-1 px-1">
-            <button
-              onClick={() => {
-                onOpenProfile();
-                if (mobileMenuOpen) onToggleMobileMenu();
-              }}
-              className="flex items-center gap-2.5 group text-left focus:outline-none"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-700 to-fuchsia-600 p-[1.5px]">
-                <div className="w-full h-full bg-[#120D1D] rounded-full flex items-center justify-center overflow-hidden">
-                  <User className="w-4 h-4 text-purple-300" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-white group-hover:text-purple-300 transition-colors">
-                  Alex Rivera
-                </span>
-                <span className="text-[10px] text-purple-400">VIP 4K HDR</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                onOpenProfile();
-                if (mobileMenuOpen) onToggleMobileMenu();
-              }}
-              className="p-1.5 rounded-lg text-purple-400/60 hover:text-white hover:bg-purple-950/40 transition-colors"
-              title="Preferences & Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </aside>
 
-      {/* Mobile Bottom Navigation Bar (Persistent for quick touch access) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#08060D]/95 backdrop-blur-lg border-t border-purple-950/60 px-2 py-2 flex items-center justify-around">
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel !rounded-none border-x-0 border-b-0 px-2 py-2 flex items-center justify-around">
         {primaryNavItems.slice(0, 5).map((item) => {
           const isActive = currentTab === item.id;
           return (
-            <button
+            <GlassButton
               key={item.id}
+              variant="navigation"
+              size="sm"
+              shape="pill"
+              active={isActive}
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
-                isActive ? 'text-purple-400' : 'text-purple-200/50 hover:text-purple-200'
-              }`}
+              className="!h-auto !py-1.5 !px-2.5 flex-col !gap-1 text-[10px]"
             >
               {item.icon}
               <span>{item.label}</span>
-            </button>
+            </GlassButton>
           );
         })}
       </nav>

@@ -3,6 +3,7 @@ import { Play, Info } from 'lucide-react';
 import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 import { availabilityService, formatReleaseDate } from '../services/availability';
+import { GlassButton } from './GlassButton';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -82,31 +83,35 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         {/* Hover Quick Action Overlay */}
         <div className="absolute inset-0 z-[2] bg-black/35 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           {isPlayable ? (
-            <button
-              type="button"
+            <GlassButton
+              variant="primary"
+              size="icon"
+              shape="circle"
               onClick={(e) => {
                 e.stopPropagation();
                 onPlay(item);
               }}
-              className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              className="w-11 h-11"
               title={`Play ${item.title}`}
               aria-label={`Play ${item.title}`}
             >
               <Play className="w-4 h-4 fill-current ml-0.5" />
-            </button>
+            </GlassButton>
           ) : (
-            <button
-              type="button"
+            <GlassButton
+              variant="icon"
+              size="icon"
+              shape="circle"
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenDetails(item);
               }}
-              className="w-11 h-11 rounded-full glass-control text-white flex items-center justify-center shadow-xl transform group-hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              className="w-11 h-11"
               title={`${availability.reason} - Click for details`}
               aria-label={`Details for ${item.title}`}
             >
               <Info className="w-4 h-4" />
-            </button>
+            </GlassButton>
           )}
         </div>
       </div>

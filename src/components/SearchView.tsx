@@ -12,6 +12,7 @@ import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
 import { searchTmdb, getTmdbStatus, TmdbStatus } from '../services/tmdb';
 import { availabilityService } from '../services/availability';
+import { GlassButton } from './GlassButton';
 
 interface SearchViewProps {
   mediaCatalog: MediaItem[];
@@ -80,9 +81,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   }, [initialQuery]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth > 800) {
-      inputRef.current?.focus();
-    }
+    inputRef.current?.focus();
     getTmdbStatus().then(setTmdbStatus);
   }, []);
 
@@ -238,7 +237,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   });
 
   return (
-    <div className="w-full min-h-0 sm:min-h-screen py-2 sm:py-6 px-4 md:px-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-screen py-6 px-4 md:px-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <span className="eyebrow block">DISCOVERY ARCHIVE</span>
@@ -261,25 +260,27 @@ export const SearchView: React.FC<SearchViewProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for movies, TV shows, actors (e.g. Avatar, Dune, Severance)..."
-            className="glass-control w-full rounded-2xl pl-11 pr-16 sm:pr-24 py-3.5 text-base md:text-sm text-[#f3f0ea] placeholder-[#8a8890] focus:outline-none"
+            className="glass-control w-full rounded-2xl pl-11 pr-24 py-3.5 text-sm text-[#f3f0ea] placeholder-[#8a8890] focus:outline-none"
           />
 
-          <div className="absolute right-3 sm:right-4 flex items-center gap-2 z-10">
+          <div className="absolute right-3 flex items-center gap-2 z-10">
             {isLoading && (
               <Loader2 className="w-4 h-4 text-white animate-spin" />
             )}
             {query && (
-              <button
-                type="button"
+              <GlassButton
+                variant="icon"
+                size="icon"
+                shape="circle"
                 onClick={() => {
                   setQuery('');
                   setResults([]);
                 }}
-                className="glass-pill w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 flex items-center justify-center rounded-full text-[#beb9bc] hover:text-white cursor-pointer"
+                className="!w-7 !h-7"
                 aria-label="Clear search query"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </GlassButton>
             )}
           </div>
         </div>
@@ -288,108 +289,118 @@ export const SearchView: React.FC<SearchViewProps> = ({
       {/* Filter Tabs & Quick Categorization */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {/* Type Filter */}
-        <div className="dz-type w-full sm:w-auto">
+        <div className="dz-type" role="group" aria-label="Filter search by type">
           {[
             { id: 'all', label: 'All' },
             { id: 'movie', label: 'Movies' },
             { id: 'series', label: 'TV Shows' },
           ].map((t) => (
-            <button
+            <GlassButton
               key={t.id}
+              variant="navigation"
+              size="sm"
+              shape="pill"
+              active={selectedType === t.id}
+              aria-pressed={selectedType === t.id}
               onClick={() => setSelectedType(t.id as any)}
-              className={`dz-type-btn flex-1 sm:flex-none min-h-[38px] sm:min-h-0 ${selectedType === t.id ? 'active' : ''}`}
+              className="dz-type-btn"
             >
               {t.label}
-            </button>
+            </GlassButton>
           ))}
         </div>
 
         {/* Quick Genre Filter */}
-        <div className="w-full md:w-auto md:flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar py-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
           {['All', 'Action', 'Sci-Fi', 'Drama', 'Thriller', 'Animation', 'Fantasy', 'Comedy'].map((genre) => (
-            <button
+            <GlassButton
               key={genre}
-              type="button"
+              variant="pill"
+              size="sm"
+              shape="pill"
+              active={selectedGenre === genre}
               aria-pressed={selectedGenre === genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`px-3.5 py-2 sm:py-1.5 rounded-full text-xs shrink-0 transition-all cursor-pointer ${
-                selectedGenre === genre
-                  ? 'glass-pill-active'
-                  : 'glass-pill text-[#c9c7cc]'
-              }`}
+              className="shrink-0 px-3.5"
             >
               {genre}
-            </button>
+            </GlassButton>
           ))}
         </div>
       </div>
 
       {/* Suggestions and Recent Searches (when query is short or empty) */}
       {!query && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pt-1 md:pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {/* Recent Searches */}
           {recentSearches.length > 0 && (
-            <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-2.5 sm:space-y-3">
+            <div className="glass-panel rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="eyebrow flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   Recent Searches
                 </span>
-                <button
-                  type="button"
+                <GlassButton
+                  variant="ghost"
+                  size="sm"
+                  shape="pill"
                   onClick={clearAllRecent}
-                  className="text-[11px] text-[#9a9ba1] hover:text-white transition-colors cursor-pointer px-2 py-1 -mr-2"
+                  className="!h-7 !px-2.5 text-[11px]"
                 >
                   Clear All
-                </button>
+                </GlassButton>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 {recentSearches.map((item) => (
-                  <button
+                  <div
                     key={item}
-                    type="button"
-                    onClick={() => handleTagClick(item)}
-                    className="glass-pill group flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
+                    className="inline-flex items-center rounded-full glass-surface p-0.5 gap-0.5"
                   >
-                    <span>{item}</span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Remove ${item} from recent searches`}
+                    <GlassButton
+                      variant="ghost"
+                      size="sm"
+                      shape="pill"
+                      onClick={() => handleTagClick(item)}
+                      className="!h-7 !px-2.5 !border-0 !bg-transparent !shadow-none text-xs"
+                    >
+                      <span>{item}</span>
+                    </GlassButton>
+                    <GlassButton
+                      variant="icon"
+                      size="icon"
+                      shape="circle"
                       onClick={(e) => removeRecentSearch(item, e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          removeRecentSearch(item, e as any);
-                        }
-                      }}
-                      className="p-1 -mr-1.5 rounded-full text-[#8a8890] group-hover:text-white opacity-80 hover:opacity-100"
+                      className="!w-6 !h-6 !border-0 !bg-transparent !shadow-none text-[#8a8890] hover:text-white"
+                      aria-label={`Remove ${item} from recent searches`}
+                      title="Remove"
                     >
                       <X className="w-3 h-3" />
-                    </span>
-                  </button>
+                    </GlassButton>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
           {/* Popular Search Tags */}
-          <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-2.5 sm:space-y-3">
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
             <span className="eyebrow block">
               Trending Searches
             </span>
 
             <div className="flex flex-wrap gap-2">
               {POPULAR_SEARCH_TAGS.map((tag) => (
-                <button
+                <GlassButton
                   key={tag}
-                  type="button"
+                  variant="pill"
+                  size="sm"
+                  shape="pill"
                   onClick={() => handleTagClick(tag)}
-                  className="glass-pill px-3 py-2 sm:py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
+                  className="px-3 text-[#d3d1d6]"
                 >
                   {tag}
-                </button>
+                </GlassButton>
               ))}
             </div>
           </div>
@@ -398,8 +409,8 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
       {/* Popular Trending Suggestions when not searching */}
       {!query && (
-        <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="space-y-4 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between">
             <div>
               <span className="eyebrow block">CURATED PICKS</span>
               <h3 className="font-display font-bold text-lg text-[#f3f0ea] mt-0.5">
@@ -473,28 +484,23 @@ export const SearchView: React.FC<SearchViewProps> = ({
           {/* Load More Button */}
           {hasMore && (
             <div className="flex justify-center pt-4">
-              <button
-                type="button"
+              <GlassButton
+                variant="primary"
+                size="md"
+                refractive={true}
                 onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-6 rounded-xl text-xs font-semibold"
+                loading={isLoadingMore}
+                leftIcon={isLoadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : undefined}
               >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Loading more titles...</span>
-                  </>
-                ) : (
-                  <span>Load More Results</span>
-                )}
-              </button>
+                <span>{isLoadingMore ? 'Loading more titles...' : 'Load More Results'}</span>
+              </GlassButton>
             </div>
           )}
         </div>
       ) : (
         /* Empty State */
         query && !isLoading && (
-          <div className="glass-panel py-10 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
+          <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
             <div className="glass-surface w-12 h-12 rounded-full flex items-center justify-center mx-auto text-white">
               <Search className="w-5 h-5" />
             </div>
@@ -503,17 +509,18 @@ export const SearchView: React.FC<SearchViewProps> = ({
               Check for typos or try searching with different keywords, actor names, or genres.
             </p>
             <div className="pt-2">
-              <button
-                type="button"
+              <GlassButton
+                variant="primary"
+                size="md"
+                refractive={true}
                 onClick={() => {
                   setQuery('');
                   setSelectedGenre('All');
                   setSelectedType('all');
                 }}
-                className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-5 text-xs font-semibold rounded-xl"
               >
                 Clear Search
-              </button>
+              </GlassButton>
             </div>
           </div>
         )

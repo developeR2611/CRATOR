@@ -4,6 +4,7 @@ import { MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
 import { getSynchronousKnownLogo, getTmdbLogo } from '../services/tmdb';
 import { isMediaUnreleased, formatReleaseDate } from '../services/availability';
+import { GlassButton } from './GlassButton';
 
 interface HeroSectionProps {
   featuredItems: MediaItem[];
@@ -75,8 +76,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
         <div className="hero-shade" />
         <div className="hero-content space-y-4">
-          <div className="h-12 sm:h-16 w-52 sm:w-80 rounded-2xl bg-white/10 animate-pulse" />
-          <div className="h-4 w-44 sm:w-48 rounded-full bg-white/10 animate-pulse" />
+          <div className="h-12 sm:h-16 w-64 sm:w-80 rounded-2xl bg-white/10 animate-pulse" />
+          <div className="h-4 w-48 rounded-full bg-white/10 animate-pulse" />
           <div className="flex gap-3 pt-1">
             <div className="h-11 w-28 rounded-full bg-white/15 animate-pulse" />
             <div className="h-11 w-32 rounded-full bg-white/10 animate-pulse" />
@@ -133,11 +134,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {(() => {
           const heroLogo = currentItem.logoUrl || dynamicLogos[currentItem.id] || getSynchronousKnownLogo(currentItem);
           return heroLogo ? (
-            <div className="mb-2.5 max-w-[78vw] sm:max-w-sm md:max-w-md">
+            <div className="mb-2.5 max-w-xs sm:max-w-sm md:max-w-md">
               <img
                 src={heroLogo}
                 alt={currentItem.title}
-                className="max-h-12 sm:max-h-16 md:max-h-20 w-auto object-contain object-left drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] select-none"
+                className="max-h-14 sm:max-h-16 md:max-h-20 w-auto object-contain object-left drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] select-none"
               />
             </div>
           ) : (
@@ -158,31 +159,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Dual Actions: Play & More info */}
         <div className="hero-buttons">
           {isUnreleased ? (
-            <span className="secondary-btn cursor-default">
+            <span className="glass-surface inline-flex items-center gap-2 h-11 px-5 rounded-xl text-sm font-semibold text-[#f3f0ea] cursor-default">
               <Calendar className="w-4 h-4" />
               <span>Releases {releaseLabel}</span>
             </span>
           ) : (
-            <button
-              type="button"
+            <GlassButton
+              variant="primary"
+              size="lg"
+              refractive={true}
               onClick={() => onPlay(currentItem)}
-              className="primary-btn"
               title={`Play ${currentItem.title}`}
+              leftIcon={<Play className="w-4 h-4 fill-current" />}
             >
-              <Play className="w-4 h-4 fill-current" />
               <span>Play</span>
-            </button>
+            </GlassButton>
           )}
 
-          <button
-            type="button"
+          <GlassButton
+            variant="secondary"
+            size="lg"
+            refractive={true}
             onClick={() => onOpenDetails(currentItem)}
-            className="secondary-btn"
             title={`More info about ${currentItem.title}`}
+            leftIcon={<Info className="w-4 h-4" />}
           >
-            <Info className="w-4 h-4" />
             <span>More info</span>
-          </button>
+          </GlassButton>
         </div>
       </div>
 

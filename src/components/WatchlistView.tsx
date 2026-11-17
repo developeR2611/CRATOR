@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Bookmark, Trash2, Compass } from 'lucide-react';
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
+import { GlassButton } from './GlassButton';
 
 interface WatchlistViewProps {
   watchlistIds: string[];
@@ -34,9 +35,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   }, [watchlistItems, filterType]);
 
   return (
-    <div className="w-full min-h-0 sm:min-h-[70vh] py-2 sm:py-6 px-4 md:px-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-[70vh] py-6 px-4 md:px-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <span className="eyebrow block">PERSONAL LIBRARY</span>
           <h1 className="font-display font-bold text-2xl md:text-3xl text-[#f3f0ea] tracking-tight flex items-center gap-2 mt-1">
@@ -49,34 +50,40 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         </div>
 
         {watchlistItems.length > 0 && (
-          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-3">
             {/* Filter Tabs */}
-            <div className="dz-type flex-1 sm:flex-none">
+            <div className="dz-type" role="group" aria-label="Filter saved titles">
               {[
                 { id: 'all', label: 'All' },
                 { id: 'movie', label: 'Movies' },
                 { id: 'series', label: 'TV Shows' },
               ].map((t) => (
-                <button
+                <GlassButton
                   key={t.id}
+                  variant="navigation"
+                  size="sm"
+                  shape="pill"
+                  active={filterType === t.id}
+                  aria-pressed={filterType === t.id}
                   onClick={() => setFilterType(t.id as any)}
-                  className={`dz-type-btn flex-1 sm:flex-none min-h-[38px] sm:min-h-0 ${filterType === t.id ? 'active' : ''}`}
+                  className="dz-type-btn"
                 >
                   {t.label}
-                </button>
+                </GlassButton>
               ))}
             </div>
 
             {/* Clear All */}
-            <button
-              type="button"
+            <GlassButton
+              variant="danger"
+              size="icon"
+              shape="square"
               onClick={onClearWatchlist}
-              className="glass-control w-11 h-11 sm:w-auto sm:h-auto sm:p-2.5 flex items-center justify-center shrink-0 rounded-xl text-[#c9c7cc] hover:text-rose-300 hover:border-rose-400/40 transition-colors cursor-pointer"
               title="Clear Library"
               aria-label="Clear Library"
             >
               <Trash2 className="w-4 h-4" />
-            </button>
+            </GlassButton>
           </div>
         )}
       </div>
@@ -96,7 +103,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="glass-panel py-10 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
+        <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
           <div className="glass-surface w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white">
             <Bookmark className="w-6 h-6" />
           </div>
@@ -106,14 +113,15 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
               Save movies and TV shows to your list to easily stream them anytime.
             </p>
           </div>
-          <button
-            type="button"
+          <GlassButton
+            variant="primary"
+            size="md"
+            refractive={true}
             onClick={onExplore}
-            className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-6 rounded-xl text-xs font-semibold"
+            leftIcon={<Compass className="w-4 h-4" />}
           >
-            <Compass className="w-4 h-4" />
             <span>Discover Titles</span>
-          </button>
+          </GlassButton>
         </div>
       )}
     </div>

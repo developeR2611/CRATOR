@@ -3,6 +3,7 @@ import { Layers, Film, Tv } from 'lucide-react';
 import { MediaItem, StreamingPlatform } from '../types';
 import { PLATFORMS_LIST } from '../data/mockData';
 import { MediaCard } from './MediaCard';
+import { GlassButton } from './GlassButton';
 
 interface PlatformsViewProps {
   platform: StreamingPlatform;
@@ -43,23 +44,24 @@ export const PlatformsView: React.FC<PlatformsViewProps> = ({
         {PLATFORMS_LIST.map((p) => {
           const active = p.name === platform;
           return (
-            <button
+            <GlassButton
               key={p.name}
-              type="button"
+              variant="pill"
+              size="sm"
+              shape="pill"
+              active={active}
               aria-pressed={active}
               onClick={() => onSelectPlatform(p.name)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all cursor-pointer ${
-                active
-                  ? 'glass-pill-active'
-                  : 'glass-pill text-[#c9c7cc]'
-              }`}
+              className="shrink-0 px-4"
+              leftIcon={
+                <span
+                  className="w-2.5 h-2.5 rounded-full inline-block"
+                  style={{ backgroundColor: p.color }}
+                />
+              }
             >
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: p.color }}
-              />
               <span>{p.name}</span>
-            </button>
+            </GlassButton>
           );
         })}
       </div>
@@ -101,15 +103,18 @@ export const PlatformsView: React.FC<PlatformsViewProps> = ({
               { id: 'movie', label: 'Movies' },
               { id: 'series', label: 'Series & Anime' },
             ].map((t) => (
-              <button
+              <GlassButton
                 key={t.id}
-                type="button"
+                variant="navigation"
+                size="sm"
+                shape="pill"
+                active={typeFilter === t.id}
                 aria-pressed={typeFilter === t.id}
                 onClick={() => setTypeFilter(t.id as any)}
-                className={`dz-type-btn ${typeFilter === t.id ? 'active' : ''}`}
+                className="dz-type-btn"
               >
                 {t.label}
-              </button>
+              </GlassButton>
             ))}
           </div>
         </div>
@@ -141,13 +146,14 @@ export const PlatformsView: React.FC<PlatformsViewProps> = ({
           <p className="text-xs text-[#9a9ba1]">
             No titles match the selected filter on {platform}.
           </p>
-          <button
-            type="button"
+          <GlassButton
+            variant="primary"
+            size="sm"
+            refractive={true}
             onClick={() => setTypeFilter('all')}
-            className="primary-btn h-9 px-4 rounded-xl text-xs font-semibold"
           >
             Show All {platform} Titles
-          </button>
+          </GlassButton>
         </div>
       )}
     </div>

@@ -9,8 +9,6 @@ export type AppRoute =
   | { name: 'discover' }
   | { name: 'mylist' }
   | { name: 'search'; query: string }
-  | { name: 'settings' }
-  | { name: 'community' }
   | { name: 'title'; mediaType: 'movie' | 'tv' | 'auto'; id: string }
   | { name: 'watch'; mediaType: 'movie' | 'tv'; id: string; season?: number; episode?: number }
   | { name: 'notfound'; pathname: string };
@@ -23,11 +21,6 @@ export const TAB_PATHS: Record<NavTab, string> = {
   mylist: '/my-list',
   search: '/search',
 };
-
-export const EXTRA_PATHS = {
-  settings: '/settings',
-  community: '/community',
-} as const;
 
 export function isItemTv(item: Pick<MediaItem, 'type'>): boolean {
   return item.type === 'series' || item.type === 'anime' || (item.type as string) === 'tv';
@@ -71,12 +64,6 @@ export function parseAppRoute(pathname: string, search: string = ''): AppRoute {
   if (normalized === '/search') {
     const params = new URLSearchParams(search);
     return { name: 'search', query: params.get('q') || '' };
-  }
-  if (normalized === '/settings') {
-    return { name: 'settings' };
-  }
-  if (normalized === '/community') {
-    return { name: 'community' };
   }
 
   const segments = normalized.split('/').filter(Boolean).map((s) => {

@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ContinueWatchingItem, MediaItem } from '../types';
 import { ImageWithFallback } from './ImageWithFallback';
+import { GlassButton } from './GlassButton';
 
 interface ContinueWatchingProps {
   items: ContinueWatchingItem[];
@@ -39,27 +40,30 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
         </div>
 
         {onClearHistory && (
-          <button 
-            type="button"
+          <GlassButton
+            variant="danger"
+            size="sm"
+            shape="pill"
             onClick={onClearHistory}
-            className="rail-action"
             title="Clear all watch history"
           >
             Clear history
-          </button>
+          </GlassButton>
         )}
       </div>
 
       {/* Rail Row Wrap with Arrows */}
       <div className="rail-row-wrap">
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('left')}
           className="rail-arrow rail-arrow-left"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4" />
-        </button>
+        </GlassButton>
 
         <div ref={scrollRef} className="card-row">
           {items.map((item) => {
@@ -96,24 +100,28 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
 
                   {/* Play icon hover overlay */}
                   <div className="absolute inset-0 z-[2] flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
-                    <div className="w-11 h-11 rounded-full glass-pill-active flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                    <div className="lg-btn lg-btn--primary lg-btn--shape-circle w-11 h-11 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                      <span className="lg-btn__content">
+                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                      </span>
                     </div>
                   </div>
 
                   {/* Remove Button */}
-                  <button
-                    type="button"
+                  <GlassButton
+                    variant="icon"
+                    size="icon"
+                    shape="circle"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemove(item.mediaId);
                     }}
-                    className="glass-control absolute top-2 right-2 sm:top-2.5 sm:right-2.5 w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 flex items-center justify-center rounded-full text-white/80 hover:text-white transition-all cursor-pointer z-10"
+                    className="!absolute top-2.5 right-2.5 !w-7 !h-7 z-10"
                     title="Remove from history"
                     aria-label={`Remove ${media.title} from history`}
                   >
-                    <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                  </button>
+                    <X className="w-3.5 h-3.5" />
+                  </GlassButton>
 
                   {/* Content Overlay at bottom of image */}
                   <div className="absolute bottom-2.5 left-3 right-3 z-10 pointer-events-none">
@@ -143,14 +151,16 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
           })}
         </div>
 
-        <button
-          type="button"
+        <GlassButton
+          variant="icon"
+          size="icon"
+          shape="circle"
           onClick={() => scroll('right')}
           className="rail-arrow rail-arrow-right"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </GlassButton>
       </div>
     </section>
   );
