@@ -7,9 +7,8 @@ import {
   RefreshCw, 
   AlertCircle, 
   Info,
-  Server,
-  Check,
-  ChevronDown
+  Tv,
+  Film
 } from 'lucide-react';
 import { MediaItem, Episode } from '../types';
 import { 
@@ -17,9 +16,7 @@ import {
   isVidRiftOrigin, 
   sendVidRiftCommand,
   extractTmdbNumericId,
-  VidRiftIncomingMessage,
-  VidRiftStateEvent,
-  VidRiftServerEntry
+  VidRiftIncomingMessage 
 } from '../services/vidrift';
 
 interface VideoPlayerProps {
@@ -67,15 +64,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [lastProgress, setLastProgress] = useState<{ currentTime: number; duration: number } | null>(null);
-  const [playerState, setPlayerState] = useState<VidRiftStateEvent | null>(null);
-  const [reportedServers, setReportedServers] = useState<VidRiftServerEntry[]>([]);
-  const [activeServer, setActiveServer] = useState<string>('');
-  const [isServerMenuOpen, setIsServerMenuOpen] = useState<boolean>(false);
-  const [commandHint, setCommandHint] = useState<string | null>(null);
-  const serverMenuRef = useRef<HTMLDivElement>(null);
-  const hasReceivedStateRef = useRef<boolean>(false);
-  const stateRetryTimerRef = useRef<number | null>(null);
-  const hintTimerRef = useRef<number | null>(null);
 
   // Sync state if episode prop changes externally
   useEffect(() => {
@@ -91,46 +79,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     ? `${item?.title} · S${currentSeason}:E${currentEpisode}${episode?.title ? ` "${episode.title}"` : ''}`
     : item?.title || 'CRATOR Streaming';
 
-  const clearStateRetryTimer = useCallback(() => {
-    if (stateRetryTimerRef.current !== null) {
-      window.clearTimeout(stateRetryTimerRef.current);
-      stateRetryTimerRef.current = null;
-    }
-  }, []);
-
-  const showTemporaryHint = useCallback((msg: string) => {
-    setCommandHint(msg);
-    if (hintTimerRef.current !== null) {
-      window.clearTimeout(hintTimerRef.current);
-    }
-    hintTimerRef.current = window.setTimeout(() => {
-      setCommandHint(null);
-      hintTimerRef.current = null;
-    }, 3500);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearStateRetryTimer();
-      if (hintTimerRef.current !== null) {
-        window.clearTimeout(hintTimerRef.current);
-      }
-    };
-  }, [clearStateRetryTimer]);
-
   // --------------------------------------------------------------------------
-  // Embed Resolution
+  // VidRift Embed Resolution
   // --------------------------------------------------------------------------
   const loadVidRift = useCallback(() => {
     if (!item) return;
 
-    clearStateRetryTimer();
-    hasReceivedStateRef.current = false;
-    setPlayerState(null);
-    setReportedServers([]);
-    setActiveServer('');
-    setIsServerMenuOpen(false);
-    setCommandHint(null);
     setIsLoading(true);
     setErrorMessage(null);
     setErrorCode(null);
@@ -152,7 +106,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     setEmbedUrl(result.embedUrl);
     setTmdbNumericId(result.tmdbId);
-  }, [item, currentSeason, currentEpisode, clearStateRetryTimer]);
+  }, [item, currentSeason, currentEpisode]);
 
   // Load when item or episode indices change
   useEffect(() => {
@@ -167,47 +121,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [isLoading, embedUrl]);
 
-  const requestPlayerState = useCallback(() => {
-    const win = iframeRef.current?.contentWindow;
-    if (!win) return;
-    sendVidRiftCommand(win, { type: 'vidrift:get-state' });
-  }, []);
-
-  const handleIframeLoad = useCallback(() => {
-    setIsLoading(false);
-    requestPlayerState();
-    clearStateRetryTimer();
-    // Retry once if deferred player script had not attached its message listener at onLoad time
-    stateRetryTimerRef.current = window.setTimeout(() => {
-      if (!hasReceivedStateRef.current) {
-        requestPlayerState();
-      }
-      stateRetryTimerRef.current = null;
-    }, 650);
-  }, [requestPlayerState, clearStateRetryTimer]);
-
-  // Close server dropdown on outside click
-  useEffect(() => {
-    if (!isServerMenuOpen) return;
-    const handleOutside = (e: MouseEvent) => {
-      if (serverMenuRef.current && !serverMenuRef.current.contains(e.target as Node)) {
-        setIsServerMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [isServerMenuOpen]);
-
   // --------------------------------------------------------------------------
-  // Cross-Origin postMessage Event Listener
+  // VidRift postMessage Event Listener
   // --------------------------------------------------------------------------
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // 1. Strict origin and source validation
+      // 1. Strict origin validation - must match https://embed.vidrift.net
       if (!isVidRiftOrigin(event.origin)) {
-        return;
-      }
-      if (iframeRef.current?.contentWindow && event.source !== iframeRef.current.contentWindow) {
         return;
       }
 
@@ -217,51 +137,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
 
       switch (data.type) {
-        // Complete state snapshot & live change stream (servers, sources, qualities, audio, subtitles)
-        case 'vidrift:state': {
-          hasReceivedStateRef.current = true;
-          clearStateRetryTimer();
-          setPlayerState(data);
-          if (Array.isArray(data.servers)) {
-            setReportedServers(data.servers);
-          }
-          if (typeof data.server === 'string') {
-            setActiveServer(data.server);
-          }
-          break;
-        }
-
-        // Immediate server list updates during provider initialization or automatic failover
-        case 'vidrift:providers': {
-          if (Array.isArray(data.providers)) {
-            setReportedServers(data.providers);
-          }
-          if (typeof data.current === 'string') {
-            setActiveServer(data.current);
-          }
-          break;
-        }
-
-        // Command feedback (e.g., first click inside player required before remote switching)
-        case 'vidrift:command-error': {
-          if (data.reason === 'click-required') {
-            showTemporaryHint('Click inside the player once to enable external switching, or switch inside the player menu.');
-          } else if (data.reason === 'invalid' || data.reason === 'unavailable' || data.reason === 'not-ready') {
-            showTemporaryHint(
-              data.field
-                ? `Selected ${data.field} is currently unavailable.`
-                : 'That playback action is currently unavailable.'
-            );
-          }
-          break;
-        }
-
-        case 'vidrift:wont-play':
-        case 'vidrift:unreleased': {
-          setIsLoading(false);
-          break;
-        }
-
         // Playback progress update (sent every 5 seconds while playing)
         case 'vidrift:progress': {
           if (typeof data.currentTime === 'number' && typeof data.duration === 'number') {
@@ -372,7 +247,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [item, isTv, currentSeason, currentEpisode, tmdbNumericId, onClose, onNextEpisode, hasNextEpisode, onProgress, onEpisodeChange, clearStateRetryTimer, showTemporaryHint]);
+  }, [item, isTv, currentSeason, currentEpisode, tmdbNumericId, onClose, onNextEpisode, hasNextEpisode, onProgress, onEpisodeChange]);
 
   // Fullscreen change synchronization
   useEffect(() => {
@@ -404,10 +279,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isServerMenuOpen) {
-          setIsServerMenuOpen(false);
-          return;
-        }
         if (!document.fullscreenElement) {
           onClose();
         }
@@ -418,34 +289,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, isServerMenuOpen]);
+  }, [onClose]);
 
   if (!item) return null;
-
-  const servers = playerState?.servers?.length ? playerState.servers : reportedServers;
-  const currentServerValue = playerState?.server || activeServer;
-  const currentServerEntry = servers.find((s) => s.value === currentServerValue);
-  const currentQualityLabel = (() => {
-    if (!playerState?.quality) return null;
-    if (playerState.quality === 'auto') return 'Auto';
-    const matched = playerState.qualities?.find((q) => q.value === playerState.quality);
-    return matched?.label || playerState.quality;
-  })();
-
-  const handleSelectServer = (serverValue: string) => {
-    const win = iframeRef.current?.contentWindow;
-    if (win) {
-      sendVidRiftCommand(win, { type: 'vidrift:set', server: serverValue });
-    }
-    setIsServerMenuOpen(false);
-  };
 
   return (
     <div
       ref={containerRef}
       className="fixed inset-0 h-[100dvh] w-full z-50 bg-black flex items-center justify-center select-none overflow-hidden overscroll-none"
     >
-      {/* 1. Embedded Player */}
+      {/* 1. VidRift Embedded Player */}
       <div className="relative w-full h-full flex items-center justify-center bg-black">
         {embedUrl && !errorMessage && (
           <iframe
@@ -455,8 +308,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             className="w-full h-full border-0 bg-black"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
-            onLoad={handleIframeLoad}
+            referrerPolicy="origin-when-cross-origin"
+            onLoad={() => setIsLoading(false)}
           />
         )}
       </div>
@@ -568,95 +421,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         </div>
 
-        {/* Top Right: Live Server Selector & Details Button */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          {servers.length > 0 && (
-            <div ref={serverMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setIsServerMenuOpen((prev) => !prev)}
-                aria-expanded={isServerMenuOpen}
-                aria-haspopup="listbox"
-                className="glass-pill flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-2.5 sm:px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
-                title="Switch streaming server"
-              >
-                <Server className="w-3.5 h-3.5 shrink-0" />
-                <span className="max-w-[78px] sm:max-w-[120px] truncate">
-                  {currentServerEntry?.label || 'Servers'}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 opacity-75 transition-transform duration-150 ${isServerMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isServerMenuOpen && (
-                <div
-                  role="listbox"
-                  aria-label="Streaming servers"
-                  className="glass-panel absolute right-0 mt-2 w-56 max-h-[60dvh] overflow-y-auto rounded-2xl p-1.5 shadow-2xl z-50"
-                >
-                  <div className="px-2.5 py-1.5 flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-[#9a9ba1]">
-                    <span>Servers ({servers.length})</span>
-                    {currentQualityLabel && <span>{currentQualityLabel}</span>}
-                  </div>
-                  <div className="space-y-0.5">
-                    {servers.map((srv) => {
-                      const isActive = srv.value === currentServerValue;
-                      const isFailed = srv.state === 'failed';
-                      return (
-                        <button
-                          key={srv.value}
-                          type="button"
-                          role="option"
-                          aria-selected={isActive}
-                          onClick={() => handleSelectServer(srv.value)}
-                          className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 sm:py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                            isActive
-                              ? 'bg-white/15 text-[#f3f0ea] font-semibold'
-                              : isFailed
-                                ? 'text-[#9a9ba1] hover:bg-white/5'
-                                : 'text-[#c9c7cc] hover:bg-white/10 hover:text-[#f3f0ea]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="truncate">{srv.label}</span>
-                            {isFailed && (
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 shrink-0">
-                                Down
-                              </span>
-                            )}
-                          </div>
-                          {isActive && <Check className="w-3.5 h-3.5 text-[#f3f0ea] shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
+        {/* Top Right: Details Button */}
+        <div className="flex items-center gap-2.5 shrink-0">
           {onViewDetails && (
             <button
               type="button"
               onClick={() => onViewDetails(item)}
-              className="glass-pill flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-2.5 sm:px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
+              className="glass-pill flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-3 sm:px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
               title="View Details"
-              aria-label="View Details"
             >
-              <Info className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden min-[400px]:inline">Details</span>
+              <Info className="w-3.5 h-3.5" />
+              <span>Details</span>
             </button>
           )}
         </div>
       </div>
-
-      {/* 5. Non-intrusive playback command hint (e.g. click-required or unavailable server) */}
-      {commandHint && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-40 px-4 max-w-[90vw] pointer-events-none">
-          <div className="glass-panel rounded-full px-4 py-2 text-xs text-[#f3f0ea] text-center shadow-xl">
-            {commandHint}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

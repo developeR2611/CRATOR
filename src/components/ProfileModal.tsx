@@ -47,8 +47,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const cardContent = (
     <div
-      className={`glass-panel relative w-full max-w-2xl rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 text-[#f3f0ea] ${
-        standalone ? 'overflow-hidden' : 'my-auto max-h-[92dvh] overflow-y-auto overscroll-contain'
+      className={`glass-panel relative w-full max-w-2xl rounded-2xl p-5 sm:p-6 md:p-8 space-y-5 sm:space-y-6 text-[#f3f0ea] ${
+        standalone ? 'overflow-hidden' : 'max-h-[92dvh] overflow-y-auto overscroll-contain'
       }`}
       onClick={(e) => e.stopPropagation()}
     >
@@ -201,7 +201,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   if (standalone) {
     return (
-      <div className="page-shell w-full pt-20 pb-4 sm:pb-6 px-4 md:px-8 max-w-2xl mx-auto space-y-4 animate-fadeIn">
+      <div className="page-shell w-full min-h-[75vh] pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto space-y-5 animate-fadeIn">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"

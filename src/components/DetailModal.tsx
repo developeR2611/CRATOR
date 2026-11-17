@@ -735,14 +735,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       const line1 = titleWords.slice(0, mid).join(' ');
       const line2 = titleWords.slice(mid).join(' ');
       return (
-        <h1 className="font-display font-extrabold text-[28px] sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.98] sm:leading-[0.95] drop-shadow-2xl">
+        <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
           <span className="block">{line1}</span>
           <span className="block">{line2}</span>
         </h1>
       );
     }
     return (
-      <h1 className="font-display font-extrabold text-[28px] sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.98] sm:leading-[0.95] drop-shadow-2xl">
+      <h1 className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl tracking-tight text-white uppercase leading-[0.95] drop-shadow-2xl">
         {activeItem.title}
       </h1>
     );
@@ -789,7 +789,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
       <div
-        className="detail-hero relative w-full min-h-[clamp(380px,54dvh,480px)] sm:min-h-[68dvh] md:min-h-[78dvh] lg:min-h-[82dvh] flex flex-col justify-end overflow-hidden"
+        className="relative w-full min-h-[82dvh] sm:min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
         onMouseMove={handleHeroPointerActivity}
         onTouchStart={handleHeroPointerActivity}
       >
@@ -840,13 +840,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               alt={activeItem.title}
               fallbackTitle={activeItem.title}
               containerClassName="w-full h-full"
-              className="w-full h-full object-cover object-[center_18%] sm:object-[center_12%]"
+              className="w-full h-full object-cover object-[center_15%] sm:object-[center_12%]"
             />
           </div>
 
           {/* Subtle Cinematic Gradients */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent w-full md:w-1/2 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#040508] via-black/45 via-30% to-transparent sm:from-black/85 sm:via-black/30 sm:via-22% h-full pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-22% to-transparent h-full pointer-events-none" />
           <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-black/35 to-transparent pointer-events-none" />
         </div>
 
@@ -876,7 +876,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
         {/* Hero Content Block */}
         <div
-          className="detail-hero-content relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-5 sm:pb-8 pt-16 sm:pt-36 md:pt-44"
+          className="relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-6 sm:pb-10 pt-24 sm:pt-60 md:pt-72"
           onMouseEnter={() => {
             if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
               heroContentHoveredRef.current = true;
@@ -893,13 +893,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out ${
               hideHeroDetailsForTrailer
                 ? 'grid-rows-[0fr] opacity-0 mb-0 pointer-events-none'
-                : 'grid-rows-[1fr] opacity-100 mb-1.5 sm:mb-3'
+                : 'grid-rows-[1fr] opacity-100 mb-2.5 sm:mb-3'
             }`}
             aria-hidden={hideHeroDetailsForTrailer}
           >
             <div className="overflow-hidden">
-              <div className="flex items-center flex-wrap gap-2 sm:gap-2.5 text-[11px] sm:text-sm font-semibold tracking-wider text-white/90">
-                <span className="hidden sm:inline text-white/50 text-base leading-none select-none">—</span>
+              <div className="flex items-center flex-wrap gap-2.5 text-xs sm:text-sm font-semibold tracking-wider text-white/90">
+                <span className="text-white/50 text-base leading-none select-none">—</span>
                 <span className="uppercase">{mediaTypeLabel}</span>
                 <span className="text-white/40">·</span>
                 <span>{activeItem.releaseDate ? formattedReleaseDate.toUpperCase() : (activeItem.releaseYear || 2026)}</span>
@@ -914,19 +914,19 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           </div>
 
           {/* OFFICIAL GRAPHIC TITLE LOGO (FROM TMDB) — always stays visible during trailer */}
-          <div className="py-0.5 min-h-[48px] sm:min-h-[84px] flex items-center">
+          <div className="py-0.5 min-h-[68px] sm:min-h-[84px] flex items-center">
             {activeItem.logoUrl ? (
-              <div className="py-0.5 sm:py-1 max-w-[72vw] sm:max-w-sm md:max-w-md">
+              <div className="py-1 max-w-xs sm:max-w-sm md:max-w-md">
                 <img
                   src={activeItem.logoUrl}
                   alt={activeItem.title}
-                  className="max-h-12 sm:max-h-20 md:max-h-24 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] select-none"
+                  className="max-h-16 sm:max-h-20 md:max-h-24 w-auto max-w-full object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.95)] select-none"
                   onError={handleLogoError}
                 />
               </div>
             ) : isLogoLoading ? (
               <div
-                className="h-12 sm:h-16 md:h-20 w-44 sm:w-64 rounded-xl bg-white/10 animate-pulse"
+                className="h-14 sm:h-16 md:h-20 w-52 sm:w-64 rounded-xl bg-white/10 animate-pulse"
                 aria-label={`Loading logo for ${activeItem.title}`}
               />
             ) : (
@@ -939,35 +939,35 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-out ${
               hideHeroDetailsForTrailer
                 ? 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
-                : 'grid-rows-[1fr] opacity-100 mt-1.5 sm:mt-3'
+                : 'grid-rows-[1fr] opacity-100 mt-2.5 sm:mt-3'
             }`}
             aria-hidden={hideHeroDetailsForTrailer}
           >
-            <div className="overflow-hidden space-y-1.5 sm:space-y-3">
+            <div className="overflow-hidden space-y-2.5 sm:space-y-3">
               {/* Genres row */}
-              <div className="text-[10.5px] sm:text-sm font-bold tracking-[0.14em] sm:tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
+              <div className="text-[11px] sm:text-sm font-bold tracking-[0.16em] sm:tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
                 {genresRow}
               </div>
 
               {/* Synopsis paragraph */}
-              <p className="text-[12.5px] sm:text-sm text-[#d1ced2] leading-snug sm:leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
+              <p className="text-xs sm:text-sm text-[#d1ced2] leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
                 {activeItem.synopsis}
               </p>
 
               {/* Directed by / Created by line */}
               {directorName && (
-                <div className="flex items-center gap-2 pt-0 sm:pt-0.5 text-[11px] sm:text-xs">
-                  <span className="font-mono text-[10px] sm:text-[11px] tracking-widest uppercase text-white/50">
+                <div className="flex items-center gap-2 pt-0.5 text-xs">
+                  <span className="font-mono text-[11px] tracking-widest uppercase text-white/50">
                     {isTv ? 'CREATED BY' : 'DIRECTED BY'}
                   </span>
-                  <span className="font-semibold text-white ml-0.5 sm:ml-1">
+                  <span className="font-semibold text-white ml-1">
                     {directorName}
                   </span>
                 </div>
               )}
 
               {/* Action Buttons Row */}
-              <div className="flex items-center gap-2 sm:gap-2.5 pt-1.5 sm:pt-2 flex-wrap">
+              <div className="flex items-center gap-2.5 pt-2 flex-wrap">
                 {hideTopPlayButton ? (
                   <div
                     className="glass-panel text-[#f3f0ea] font-semibold px-5 py-3 rounded-xl flex items-center gap-2.5 text-sm"
@@ -1038,15 +1038,15 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </div>
 
       {/* 3. CONTENT SECTIONS */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-2 sm:pt-5 pb-6 sm:pb-10 space-y-6 sm:space-y-8">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-6 sm:pt-8 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pb-16 space-y-10 sm:space-y-12">
         {/* ================================================================= */}
         {/* FOR TV SERIES: CONTINUE THE STORY / Episodes */}
         {/* ================================================================= */}
         {isTv && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="flex items-end justify-between border-b border-white/10 pb-3 sm:pb-4 flex-wrap gap-3 sm:gap-4">
+          <div className="space-y-6">
+            <div className="flex items-end justify-between border-b border-white/10 pb-4 flex-wrap gap-4">
               <div>
-                <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-0.5 sm:mb-1">
+                <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-1">
                   CONTINUE THE STORY
                 </span>
                 <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight flex items-center gap-2.5">
@@ -1130,14 +1130,14 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       }}
                       role={epUnreleased ? undefined : 'button'}
                       tabIndex={epUnreleased ? undefined : 0}
-                      className={`glass-surface group flex flex-row items-center gap-3 sm:gap-4 p-2.5 sm:p-3.5 rounded-2xl ${
+                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-2xl ${
                         epUnreleased
                           ? 'opacity-80 cursor-default'
                           : 'glass-hover cursor-pointer'
                       }`}
                     >
                       {/* Thumbnail */}
-                      <div className="relative aspect-video w-28 sm:w-44 rounded-xl overflow-hidden shrink-0 bg-[#0a0c12] border border-white/10">
+                      <div className="relative aspect-video w-full sm:w-44 rounded-xl overflow-hidden shrink-0 bg-[#0a0c12] border border-white/10">
                         <ImageWithFallback
                           src={ep.thumbnail || activeItem.backdropUrl || activeItem.posterUrl}
                           alt={ep.title}
@@ -1147,33 +1147,33 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                         />
                         {!epUnreleased && (
                           <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 flex items-center justify-center transition-colors">
-                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full glass-pill-active flex items-center justify-center shadow-lg">
-                              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current ml-0.5" />
+                            <div className="w-9 h-9 rounded-full glass-pill-active flex items-center justify-center shadow-lg">
+                              <Play className="w-4 h-4 fill-current ml-0.5" />
                             </div>
                           </div>
                         )}
-                        <span className="glass-badge absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono text-white">
+                        <span className="glass-badge absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono text-white">
                           {epUnreleased && ep.releaseDate ? formatReleaseDate(ep.releaseDate) : ep.runtime}
                         </span>
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1 text-left">
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <span className="text-[11px] sm:text-xs font-mono font-bold text-[#c9c7cc]">
-                            Ep {ep.episodeNumber}
+                      <div className="flex-1 space-y-1 text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono font-bold text-[#c9c7cc]">
+                            Episode {ep.episodeNumber}
                           </span>
                           <span className="text-white/30">·</span>
-                          <h4 className={`font-semibold text-xs sm:text-sm text-white truncate max-w-full ${epUnreleased ? '' : 'group-hover:text-emerald-300'} transition-colors`}>
+                          <h4 className={`font-semibold text-sm text-white ${epUnreleased ? '' : 'group-hover:text-emerald-300'} transition-colors`}>
                             {ep.title}
                           </h4>
                           {ep.releaseDate && (
-                            <span className="hidden sm:inline text-[11px] font-mono text-[#8a8890]">
+                            <span className="text-[11px] font-mono text-[#8a8890]">
                               · {formatReleaseDate(ep.releaseDate)}
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] sm:text-xs text-[#9a9ba1] line-clamp-2">
+                        <p className="text-xs text-[#9a9ba1] line-clamp-2">
                           {ep.synopsis || (epUnreleased ? `Scheduled to air ${formatReleaseDate(ep.releaseDate)}.` : 'Full episode stream ready to watch.')}
                         </p>
                       </div>
@@ -1217,13 +1217,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* FEATURING & Cast Section */}
         {/* ================================================================= */}
         {castMembers.length > 0 && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="space-y-0.5 sm:space-y-1">
-              <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#9a9ba1] uppercase flex items-center gap-2">
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase flex items-center gap-2">
                 <span className="text-white/50">—</span>
                 <span>FEATURING</span>
               </span>
-              <div className="flex items-baseline justify-between border-b border-white/10 pb-2.5 sm:pb-3 flex-wrap gap-2">
+              <div className="flex items-baseline justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
                 <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
                   Cast
                 </h2>
@@ -1234,7 +1234,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             </div>
 
             {/* Cast Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {castMembers.map((member, idx) => (
                 <button
                   key={`${member.id || member.name}-${idx}`}
@@ -1242,9 +1242,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   onClick={() => handleOpenCastMember(member)}
                   data-cast-card="true"
                   aria-label={`View details for ${member.name}`}
-                  className="glass-surface glass-hover flex flex-col items-start gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-2xl group cursor-pointer text-left"
+                  className="glass-surface glass-hover flex flex-col items-start gap-2.5 p-2.5 sm:p-3 rounded-2xl group cursor-pointer text-left"
                 >
-                  <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/20 shadow-md">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/20 shadow-md">
                     <ImageWithFallback
                       src={member.avatar}
                       alt={member.name}
@@ -1257,7 +1257,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   <div className="w-full text-left space-y-0.5">
                     <h4 className="font-semibold text-xs text-white group-hover:text-emerald-300 transition-colors truncate flex items-center justify-between gap-1">
                       <span className="truncate">{member.name}</span>
-                      <ChevronRight className="w-3 h-3 shrink-0 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+                      <ChevronRight className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h4>
                     <p className="text-[11px] text-[#9a9ba1] truncate font-mono">{member.character}</p>
                   </div>
@@ -1271,13 +1271,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* Recommendations ("More Like This") */}
         {/* ================================================================= */}
         {(tmdbRecommendations.length > 0 || relatedItems.length > 0) && (
-          <div className="space-y-3.5 sm:space-y-4 pt-4 sm:pt-5 border-t border-white/10">
+          <div className="space-y-6 pt-6 border-t border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#9a9ba1] uppercase block mb-0.5 sm:mb-1">
+                <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase block mb-1">
                   RECOMMENDATIONS
                 </span>
-                <h3 className="font-display font-bold text-xl sm:text-2xl text-white">
+                <h3 className="font-display font-bold text-2xl text-white">
                   More Like This
                 </h3>
               </div>
