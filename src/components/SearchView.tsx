@@ -238,7 +238,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   });
 
   return (
-    <div className="w-full min-h-screen py-4 sm:py-6 px-4 md:px-8 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-0 sm:min-h-screen py-2 sm:py-6 px-4 md:px-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <span className="eyebrow block">DISCOVERY ARCHIVE</span>
@@ -326,10 +326,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
       {/* Suggestions and Recent Searches (when query is short or empty) */}
       {!query && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pt-1 md:pt-2">
           {/* Recent Searches */}
           {recentSearches.length > 0 && (
-            <div className="glass-panel rounded-2xl p-5 space-y-3">
+            <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-2.5 sm:space-y-3">
               <div className="flex items-center justify-between">
                 <span className="eyebrow flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
@@ -375,7 +375,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
           )}
 
           {/* Popular Search Tags */}
-          <div className="glass-panel rounded-2xl p-5 space-y-3">
+          <div className="glass-panel rounded-2xl p-4 sm:p-5 space-y-2.5 sm:space-y-3">
             <span className="eyebrow block">
               Trending Searches
             </span>
@@ -398,7 +398,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
       {/* Popular Trending Suggestions when not searching */}
       {!query && (
-        <div className="space-y-4 pt-4 border-t border-white/10">
+        <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-white/10">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <span className="eyebrow block">CURATED PICKS</span>
@@ -494,7 +494,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       ) : (
         /* Empty State */
         query && !isLoading && (
-          <div className="glass-panel py-14 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
+          <div className="glass-panel py-10 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
             <div className="glass-surface w-12 h-12 rounded-full flex items-center justify-center mx-auto text-white">
               <Search className="w-5 h-5" />
             </div>

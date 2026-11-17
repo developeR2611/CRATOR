@@ -789,7 +789,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
       <div
-        className="relative w-full min-h-[82dvh] sm:min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
+        className="relative w-full min-h-[58dvh] sm:min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
         onMouseMove={handleHeroPointerActivity}
         onTouchStart={handleHeroPointerActivity}
       >
@@ -876,7 +876,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
         {/* Hero Content Block */}
         <div
-          className="relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-6 sm:pb-10 pt-24 sm:pt-60 md:pt-72"
+          className="relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-5 sm:pb-10 pt-20 sm:pt-60 md:pt-72"
           onMouseEnter={() => {
             if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
               heroContentHoveredRef.current = true;
@@ -1038,13 +1038,13 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </div>
 
       {/* 3. CONTENT SECTIONS */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-6 sm:pt-8 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pb-16 space-y-10 sm:space-y-12">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-3 sm:pt-8 pb-4 sm:pb-16 space-y-7 sm:space-y-12">
         {/* ================================================================= */}
         {/* FOR TV SERIES: CONTINUE THE STORY / Episodes */}
         {/* ================================================================= */}
         {isTv && (
-          <div className="space-y-6">
-            <div className="flex items-end justify-between border-b border-white/10 pb-4 flex-wrap gap-4">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-end justify-between border-b border-white/10 pb-3 sm:pb-4 flex-wrap gap-3 sm:gap-4">
               <div>
                 <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-1">
                   CONTINUE THE STORY
@@ -1130,7 +1130,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       }}
                       role={epUnreleased ? undefined : 'button'}
                       tabIndex={epUnreleased ? undefined : 0}
-                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-2xl ${
+                      className={`glass-surface group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-2xl ${
                         epUnreleased
                           ? 'opacity-80 cursor-default'
                           : 'glass-hover cursor-pointer'
@@ -1217,7 +1217,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* FEATURING & Cast Section */}
         {/* ================================================================= */}
         {castMembers.length > 0 && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div className="space-y-1">
               <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase flex items-center gap-2">
                 <span className="text-white/50">—</span>
@@ -1271,7 +1271,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         {/* Recommendations ("More Like This") */}
         {/* ================================================================= */}
         {(tmdbRecommendations.length > 0 || relatedItems.length > 0) && (
-          <div className="space-y-6 pt-6 border-t border-white/10">
+          <div className="space-y-4 sm:space-y-6 pt-4 sm:pt-6 border-t border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase block mb-1">

@@ -34,9 +34,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   }, [watchlistItems, filterType]);
 
   return (
-    <div className="w-full min-h-[70vh] py-4 sm:py-6 px-4 md:px-8 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-0 sm:min-h-[70vh] py-2 sm:py-6 px-4 md:px-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
         <div>
           <span className="eyebrow block">PERSONAL LIBRARY</span>
           <h1 className="font-display font-bold text-2xl md:text-3xl text-[#f3f0ea] tracking-tight flex items-center gap-2 mt-1">
@@ -96,7 +96,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="glass-panel py-14 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
+        <div className="glass-panel py-10 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
           <div className="glass-surface w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white">
             <Bookmark className="w-6 h-6" />
           </div>

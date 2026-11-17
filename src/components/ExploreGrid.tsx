@@ -97,7 +97,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
   };
 
   return (
-    <section className="discover w-full px-4 sm:px-[4.5vw] py-5 sm:py-8 text-left">
+    <section className="discover w-full px-4 sm:px-[4.5vw] py-2 sm:py-8 text-left">
       {/* 7Movies Toolbar & Filters */}
       <div className="dz-head">
         <div className="dz-filters" role="toolbar" aria-label="Filters">
@@ -226,7 +226,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
         </div>
 
         {/* Secondary Meta Bar */}
-        <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-4 mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-3">
+        <div className="dz-bar flex items-center justify-between border-t border-white/12 pt-3 sm:pt-4 mt-3.5 sm:mt-5 text-xs text-[#9a9ba1] font-mono uppercase tracking-wider flex-wrap gap-2.5 sm:gap-3">
           <span className="dz-count text-[#c9c7cc] flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2FBF71] shadow-[0_0_8px_#2FBF71]" />
             <span>{filteredItems.length} titles ready to stream</span>
@@ -246,7 +246,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
       </div>
 
       {/* 7Movies Results Grid */}
-      <div className="dz-grid mt-6">
+      <div className="dz-grid mt-4 sm:mt-6">
         {filteredItems.map((item) => (
           <MediaCard
             key={item.id}
