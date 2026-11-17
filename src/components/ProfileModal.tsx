@@ -47,7 +47,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const cardContent = (
     <div
-      className="glass-panel relative w-full max-w-2xl rounded-2xl overflow-hidden p-6 md:p-8 space-y-6 text-[#f3f0ea]"
+      className={`glass-panel relative w-full max-w-2xl rounded-2xl p-5 sm:p-6 md:p-8 space-y-5 sm:space-y-6 text-[#f3f0ea] ${
+        standalone ? 'overflow-hidden' : 'max-h-[92dvh] overflow-y-auto overscroll-contain'
+      }`}
       onClick={(e) => e.stopPropagation()}
     >
       {!standalone && (
@@ -55,7 +57,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Close settings"
-          className="glass-control absolute top-4 right-4 p-2 rounded-full text-[#c9c7cc] hover:text-white cursor-pointer"
+          className="glass-control absolute top-3 right-3 sm:top-4 sm:right-4 w-11 h-11 sm:w-auto sm:h-auto sm:p-2 flex items-center justify-center rounded-full text-[#c9c7cc] hover:text-white cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -136,7 +138,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <select
             value={selectedQuality}
             onChange={(e) => setSelectedQuality(e.target.value)}
-            className="glass-control w-full rounded-xl px-3.5 py-2.5 text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
+            className="glass-control w-full min-h-[44px] sm:min-h-0 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
           >
             <option value="4K Ultra HD (2160p)" className="bg-[#0e1118] text-white">
               4K Ultra HD (2160p) - Maximum Bitrate
@@ -161,7 +163,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <select
             value={selectedAudio}
             onChange={(e) => setSelectedAudio(e.target.value)}
-            className="glass-control w-full rounded-xl px-3.5 py-2.5 text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
+            className="glass-control w-full min-h-[44px] sm:min-h-0 rounded-xl px-3.5 py-2.5 text-base sm:text-xs text-[#f3f0ea] font-medium focus:outline-none cursor-pointer"
           >
             <option value="Dolby Atmos / Spatial" className="bg-[#0e1118] text-white">
               Dolby Atmos / Spatial Audio 7.1
@@ -181,14 +183,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="secondary-btn h-9 px-4 rounded-xl text-xs"
+          className="secondary-btn min-h-[44px] sm:min-h-0 sm:h-9 flex-1 sm:flex-none px-4 rounded-xl text-xs"
         >
           Back
         </button>
         <button
           type="button"
           onClick={handleSave}
-          className="primary-btn h-9 px-5 rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="primary-btn min-h-[44px] sm:min-h-0 sm:h-9 flex-1 sm:flex-none px-5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
         >
           <Check className="w-3.5 h-3.5" />
           <span>Save Settings</span>
@@ -199,12 +201,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   if (standalone) {
     return (
-      <div className="w-full min-h-[75vh] pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto space-y-5 animate-fadeIn">
+      <div className="page-shell w-full min-h-[75vh] pt-24 pb-20 px-4 md:px-8 max-w-2xl mx-auto space-y-5 animate-fadeIn">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="glass-pill inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-white cursor-pointer"
+            className="glass-pill inline-flex items-center gap-2 min-h-[40px] sm:min-h-0 px-4 py-2 rounded-full text-xs font-semibold text-white cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>

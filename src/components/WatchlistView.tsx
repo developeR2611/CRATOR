@@ -34,7 +34,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   }, [watchlistItems, filterType]);
 
   return (
-    <div className="w-full min-h-[70vh] py-6 px-4 md:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-[70vh] py-4 sm:py-6 px-4 md:px-8 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
@@ -49,9 +49,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         </div>
 
         {watchlistItems.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
             {/* Filter Tabs */}
-            <div className="dz-type">
+            <div className="dz-type flex-1 sm:flex-none">
               {[
                 { id: 'all', label: 'All' },
                 { id: 'movie', label: 'Movies' },
@@ -60,7 +60,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 <button
                   key={t.id}
                   onClick={() => setFilterType(t.id as any)}
-                  className={`dz-type-btn ${filterType === t.id ? 'active' : ''}`}
+                  className={`dz-type-btn flex-1 sm:flex-none min-h-[38px] sm:min-h-0 ${filterType === t.id ? 'active' : ''}`}
                 >
                   {t.label}
                 </button>
@@ -71,7 +71,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             <button
               type="button"
               onClick={onClearWatchlist}
-              className="glass-control p-2.5 rounded-xl text-[#c9c7cc] hover:text-rose-300 hover:border-rose-400/40 transition-colors cursor-pointer"
+              className="glass-control w-11 h-11 sm:w-auto sm:h-auto sm:p-2.5 flex items-center justify-center shrink-0 rounded-xl text-[#c9c7cc] hover:text-rose-300 hover:border-rose-400/40 transition-colors cursor-pointer"
               title="Clear Library"
               aria-label="Clear Library"
             >
@@ -96,7 +96,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
+        <div className="glass-panel py-14 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-4 px-6">
           <div className="glass-surface w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white">
             <Bookmark className="w-6 h-6" />
           </div>
@@ -109,7 +109,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           <button
             type="button"
             onClick={onExplore}
-            className="primary-btn h-10 px-6 rounded-xl text-xs font-semibold"
+            className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-6 rounded-xl text-xs font-semibold"
           >
             <Compass className="w-4 h-4" />
             <span>Discover Titles</span>

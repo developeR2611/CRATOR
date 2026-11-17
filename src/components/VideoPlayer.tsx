@@ -296,7 +296,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-black flex items-center justify-center select-none overflow-hidden"
+      className="fixed inset-0 h-[100dvh] w-full z-50 bg-black flex items-center justify-center select-none overflow-hidden overscroll-none"
     >
       {/* 1. VidRift Embedded Player */}
       <div className="relative w-full h-full flex items-center justify-center bg-black">
@@ -331,10 +331,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* 3. Error Overlay */}
       {errorMessage && !isLoading && (
-        <div className="glass-backdrop absolute inset-0 flex flex-col items-center justify-center p-6 z-40">
-          <div className="glass-panel rounded-2xl p-6 sm:p-8 text-center max-w-xl w-full space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-rose-950/60 border border-rose-400/40 flex items-center justify-center shadow-2xl text-rose-300 mx-auto">
-              <AlertCircle className="w-8 h-8" />
+        <div className="glass-backdrop absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 z-40 overflow-y-auto">
+          <div className="glass-panel my-auto rounded-2xl p-5 sm:p-8 text-center max-w-xl w-full space-y-4 sm:space-y-5">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-950/60 border border-rose-400/40 flex items-center justify-center shadow-2xl text-rose-300 mx-auto">
+              <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
 
             <div className="space-y-2">
@@ -356,7 +356,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 type="button"
                 onClick={loadVidRift}
-                className="primary-btn h-10 px-5 text-xs rounded-xl"
+                className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-5 text-xs rounded-xl"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Retry Playback</span>
@@ -366,7 +366,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <button
                   type="button"
                   onClick={() => onViewDetails(item)}
-                  className="secondary-btn h-10 px-4 text-xs rounded-xl"
+                  className="secondary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-4 text-xs rounded-xl"
                 >
                   <Info className="w-4 h-4 text-[#c9c7cc]" />
                   <span>Details & Episodes</span>
@@ -376,7 +376,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="secondary-btn h-10 px-4 text-xs rounded-xl"
+                className="secondary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-4 text-xs rounded-xl"
               >
                 Back to Catalog
               </button>
@@ -387,20 +387,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* 4. Top Header Bar */}
       <div 
-        className="glass-overlay-bar absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between gap-3 z-30 pointer-events-auto transition-opacity duration-300"
+        className="glass-overlay-bar absolute top-0 left-0 right-0 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-3 md:p-6 flex items-center justify-between gap-2.5 sm:gap-3 z-30 pointer-events-auto transition-opacity duration-300"
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
           <button
             type="button"
             onClick={onClose}
-            className="glass-control p-2.5 rounded-full text-white cursor-pointer shrink-0"
+            className="glass-control w-11 h-11 sm:w-auto sm:h-auto sm:p-2.5 flex items-center justify-center rounded-full text-white cursor-pointer shrink-0"
             aria-label="Back to title"
             title="Exit player (Esc)"
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="min-w-0">
-            <h2 className="font-display font-bold text-base md:text-lg text-[#f3f0ea] truncate max-w-[54vw] sm:max-w-md md:max-w-xl">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display font-bold text-sm sm:text-base md:text-lg text-[#f3f0ea] truncate sm:max-w-md md:max-w-xl">
               {titleToDisplay}
             </h2>
             <div className="flex items-center gap-2 text-xs text-[#c9c7cc]">
@@ -408,9 +408,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 4K Ultra HD
               </span>
               {isTv && (
-                <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
-                  Season {currentSeason} · Episode {currentEpisode}
-                </span>
+                <>
+                  <span className="text-[11px] font-mono text-[#9a9ba1] sm:hidden">
+                    S{currentSeason}·E{currentEpisode}
+                  </span>
+                  <span className="text-[11px] font-mono text-[#9a9ba1] hidden sm:inline">
+                    Season {currentSeason} · Episode {currentEpisode}
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -422,7 +427,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <button
               type="button"
               onClick={() => onViewDetails(item)}
-              className="glass-pill flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
+              className="glass-pill flex items-center gap-1.5 min-h-[40px] sm:min-h-0 px-3 sm:px-3.5 py-2 rounded-full text-[#f3f0ea] text-xs font-semibold cursor-pointer"
               title="View Details"
             >
               <Info className="w-3.5 h-3.5" />

@@ -780,7 +780,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       <button
         type="button"
         onClick={handleCloseModal}
-        className="glass-control fixed top-6 left-6 z-50 w-11 h-11 rounded-full flex items-center justify-center text-white/95 hover:text-white hover:scale-105 active:scale-95 cursor-pointer"
+        className="glass-control fixed top-[max(1rem,env(safe-area-inset-top))] left-4 sm:top-6 sm:left-6 z-50 w-11 h-11 rounded-full flex items-center justify-center text-white/95 hover:text-white hover:scale-105 active:scale-95 cursor-pointer"
         aria-label="Back"
         title="Back (Esc)"
       >
@@ -789,7 +789,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
       {/* 2. Hero Section with Full-Bleed Cinematic Backdrop + 3s Auto-Playing Trailer */}
       <div
-        className="relative w-full min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
+        className="relative w-full min-h-[82dvh] sm:min-h-[92vh] md:min-h-[96vh] lg:min-h-screen flex flex-col justify-end overflow-hidden"
         onMouseMove={handleHeroPointerActivity}
         onTouchStart={handleHeroPointerActivity}
       >
@@ -858,7 +858,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             data-hero-mute-toggle="true"
             aria-label={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
             title={heroTrailerMuted ? 'Unmute trailer' : 'Mute trailer'}
-            className="glass-control absolute top-6 right-6 z-20 h-11 px-4 rounded-full flex items-center gap-2 text-xs font-semibold text-white hover:scale-105 active:scale-95 cursor-pointer"
+            className="glass-control absolute top-[max(1rem,env(safe-area-inset-top))] right-4 sm:top-6 sm:right-6 z-20 h-11 px-4 rounded-full flex items-center gap-2 text-xs font-semibold text-white hover:scale-105 active:scale-95 cursor-pointer"
           >
             {heroTrailerMuted ? (
               <>
@@ -876,7 +876,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 
         {/* Hero Content Block */}
         <div
-          className="relative z-10 w-full max-w-4xl px-6 sm:px-12 md:px-16 pb-8 sm:pb-10 pt-44 sm:pt-60 md:pt-72"
+          className="relative z-10 w-full max-w-4xl px-4 sm:px-12 md:px-16 pb-6 sm:pb-10 pt-24 sm:pt-60 md:pt-72"
           onMouseEnter={() => {
             if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
               heroContentHoveredRef.current = true;
@@ -945,7 +945,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           >
             <div className="overflow-hidden space-y-2.5 sm:space-y-3">
               {/* Genres row */}
-              <div className="text-xs sm:text-sm font-bold tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
+              <div className="text-[11px] sm:text-sm font-bold tracking-[0.16em] sm:tracking-[0.25em] text-[#beb9bc] uppercase py-0.5">
                 {genresRow}
               </div>
 
@@ -990,7 +990,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handlePlayCurrent()}
-                    className="primary-btn h-11 px-7 rounded-xl text-sm font-bold"
+                    className="primary-btn h-11 px-5 sm:px-7 rounded-xl text-sm font-bold"
                   >
                     <Play className="w-4 h-4 fill-current" />
                     <span>{isTv ? `Resume S${selectedSeasonNumber} E1` : 'Play'}</span>
@@ -1038,7 +1038,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       </div>
 
       {/* 3. CONTENT SECTIONS */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 md:px-16 pt-8 pb-16 space-y-12">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 md:px-16 pt-6 sm:pt-8 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pb-16 space-y-10 sm:space-y-12">
         {/* ================================================================= */}
         {/* FOR TV SERIES: CONTINUE THE STORY / Episodes */}
         {/* ================================================================= */}
@@ -1049,7 +1049,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 <span className="text-xs font-mono tracking-widest text-[#8e8a91] uppercase block mb-1">
                   CONTINUE THE STORY
                 </span>
-                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight flex items-center gap-2.5">
+                <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight flex items-center gap-2.5">
                   <span>Episodes</span>
                   {isLoadingSeasons && (
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
@@ -1058,11 +1058,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               </div>
 
               {/* Season Selector Controls */}
-              <div className="flex flex-col items-end">
+              <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
                 <span className="text-[10px] font-mono tracking-widest text-[#8e8a91] uppercase mb-1">
                   SEASON
                 </span>
-                <div className="relative z-20 flex items-center gap-2 flex-wrap justify-end">
+                <div className="relative z-20 flex items-center gap-2 flex-wrap justify-start sm:justify-end w-full sm:w-auto">
                   {seasons.length > 1 && seasons.length <= 8 && (
                     <div className="flex items-center gap-1.5 mr-1 flex-wrap">
                       {seasons.map((s) => (
@@ -1071,7 +1071,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                           type="button"
                           aria-pressed={selectedSeasonNumber === s.seasonNumber}
                           onClick={() => handleSeasonChange(s.seasonNumber)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer ${
+                          className={`px-3.5 py-2 sm:py-1.5 rounded-full text-xs transition-all cursor-pointer ${
                             selectedSeasonNumber === s.seasonNumber
                               ? 'glass-pill-active'
                               : 'glass-pill text-[#c9c7cc]'
@@ -1088,7 +1088,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                       value={selectedSeasonNumber}
                       onChange={(e) => handleSeasonChange(Number(e.target.value))}
                       aria-label="Select season"
-                      className="glass-control appearance-none rounded-full px-4 py-2 pr-9 text-xs font-semibold text-white cursor-pointer"
+                      className="glass-control appearance-none rounded-full px-4 py-2.5 sm:py-2 pr-9 text-sm sm:text-xs font-semibold text-white cursor-pointer"
                     >
                       {seasons.map((s) => (
                         <option key={s.seasonNumber} value={s.seasonNumber} className="bg-[#0e1118] text-white">
@@ -1223,18 +1223,18 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 <span className="text-white/50">—</span>
                 <span>FEATURING</span>
               </span>
-              <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
-                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+              <div className="flex items-baseline justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
+                <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
                   Cast
                 </h2>
-                <span className="text-xs font-mono tracking-widest text-[#9a9ba1] uppercase">
-                  {castMembers.length} CREDITED · CLICK FOR BIO
+                <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#9a9ba1] uppercase">
+                  {castMembers.length} CREDITED · TAP FOR BIO
                 </span>
               </div>
             </div>
 
             {/* Cast Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {castMembers.map((member, idx) => (
                 <button
                   key={`${member.id || member.name}-${idx}`}
@@ -1242,7 +1242,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                   onClick={() => handleOpenCastMember(member)}
                   data-cast-card="true"
                   aria-label={`View details for ${member.name}`}
-                  className="glass-surface glass-hover flex flex-col items-start gap-2.5 p-3 rounded-2xl group cursor-pointer text-left"
+                  className="glass-surface glass-hover flex flex-col items-start gap-2.5 p-2.5 sm:p-3 rounded-2xl group cursor-pointer text-left"
                 >
                   <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/20 shadow-md">
                     <ImageWithFallback
@@ -1283,7 +1283,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
               {(tmdbRecommendations.length > 0 ? tmdbRecommendations : relatedItems).slice(0, 6).map((rel) => (
                 <a
                   key={rel.id}
@@ -1323,27 +1323,27 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       {/* ================================================================= */}
       {selectedCast && (
         <div
-          className="glass-backdrop fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 animate-fadeIn"
+          className="glass-backdrop fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-6 animate-fadeIn"
           onClick={() => setSelectedCast(null)}
           role="dialog"
           aria-modal="true"
           aria-label={`${selectedCast.name} details`}
         >
           <div
-            className="glass-panel relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl p-6 sm:p-8 space-y-6 text-left"
+            className="glass-panel relative w-full max-w-3xl max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl p-5 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-8 space-y-5 sm:space-y-6 text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setSelectedCast(null)}
               aria-label="Close cast details"
-              className="glass-control absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer"
+              className="glass-control absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Top Profile Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pr-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 pr-12 sm:pr-8">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-white/10 border border-white/15 shrink-0 shadow-lg">
                 <ImageWithFallback
                   src={personDetails?.profileUrl || selectedCast.avatar}

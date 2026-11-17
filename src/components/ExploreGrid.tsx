@@ -97,7 +97,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
   };
 
   return (
-    <section className="discover w-full px-[4.5vw] py-8 text-left">
+    <section className="discover w-full px-4 sm:px-[4.5vw] py-5 sm:py-8 text-left">
       {/* 7Movies Toolbar & Filters */}
       <div className="dz-head">
         <div className="dz-filters" role="toolbar" aria-label="Filters">
@@ -236,7 +236,7 @@ export const ExploreGrid: React.FC<ExploreGridProps> = ({
             <button 
               type="button" 
               onClick={handlePickRandom}
-              className="glass-pill inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider text-[#f3f0ea] cursor-pointer"
+              className="glass-pill inline-flex items-center gap-2 px-4 py-2 sm:py-1.5 min-h-[40px] sm:min-h-0 rounded-full text-xs font-mono uppercase tracking-wider text-[#f3f0ea] cursor-pointer"
             >
               <Dices className="w-3.5 h-3.5" />
               <span>Pick one for me</span>

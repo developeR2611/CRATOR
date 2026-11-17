@@ -108,11 +108,11 @@ export const ContinueWatching: React.FC<ContinueWatchingProps> = ({
                       e.stopPropagation();
                       onRemove(item.mediaId);
                     }}
-                    className="glass-control absolute top-2.5 right-2.5 p-1.5 rounded-full text-white/80 hover:text-white transition-all cursor-pointer z-10"
+                    className="glass-control absolute top-2 right-2 sm:top-2.5 sm:right-2.5 w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 flex items-center justify-center rounded-full text-white/80 hover:text-white transition-all cursor-pointer z-10"
                     title="Remove from history"
                     aria-label={`Remove ${media.title} from history`}
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   </button>
 
                   {/* Content Overlay at bottom of image */}

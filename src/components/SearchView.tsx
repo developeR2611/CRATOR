@@ -80,7 +80,9 @@ export const SearchView: React.FC<SearchViewProps> = ({
   }, [initialQuery]);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (typeof window !== 'undefined' && window.innerWidth > 800) {
+      inputRef.current?.focus();
+    }
     getTmdbStatus().then(setTmdbStatus);
   }, []);
 
@@ -236,7 +238,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   });
 
   return (
-    <div className="w-full min-h-screen py-6 px-4 md:px-8 space-y-6 max-w-7xl mx-auto">
+    <div className="w-full min-h-screen py-4 sm:py-6 px-4 md:px-8 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <span className="eyebrow block">DISCOVERY ARCHIVE</span>
@@ -259,10 +261,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for movies, TV shows, actors (e.g. Avatar, Dune, Severance)..."
-            className="glass-control w-full rounded-2xl pl-11 pr-24 py-3.5 text-sm text-[#f3f0ea] placeholder-[#8a8890] focus:outline-none"
+            className="glass-control w-full rounded-2xl pl-11 pr-16 sm:pr-24 py-3.5 text-base md:text-sm text-[#f3f0ea] placeholder-[#8a8890] focus:outline-none"
           />
 
-          <div className="absolute right-4 flex items-center gap-2 z-10">
+          <div className="absolute right-3 sm:right-4 flex items-center gap-2 z-10">
             {isLoading && (
               <Loader2 className="w-4 h-4 text-white animate-spin" />
             )}
@@ -273,7 +275,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   setQuery('');
                   setResults([]);
                 }}
-                className="glass-pill p-1.5 rounded-full text-[#beb9bc] hover:text-white cursor-pointer"
+                className="glass-pill w-9 h-9 sm:w-auto sm:h-auto sm:p-1.5 flex items-center justify-center rounded-full text-[#beb9bc] hover:text-white cursor-pointer"
                 aria-label="Clear search query"
               >
                 <X className="w-3.5 h-3.5" />
@@ -286,7 +288,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       {/* Filter Tabs & Quick Categorization */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {/* Type Filter */}
-        <div className="dz-type">
+        <div className="dz-type w-full sm:w-auto">
           {[
             { id: 'all', label: 'All' },
             { id: 'movie', label: 'Movies' },
@@ -295,7 +297,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             <button
               key={t.id}
               onClick={() => setSelectedType(t.id as any)}
-              className={`dz-type-btn ${selectedType === t.id ? 'active' : ''}`}
+              className={`dz-type-btn flex-1 sm:flex-none min-h-[38px] sm:min-h-0 ${selectedType === t.id ? 'active' : ''}`}
             >
               {t.label}
             </button>
@@ -303,14 +305,14 @@ export const SearchView: React.FC<SearchViewProps> = ({
         </div>
 
         {/* Quick Genre Filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="w-full md:w-auto md:flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar py-1">
           {['All', 'Action', 'Sci-Fi', 'Drama', 'Thriller', 'Animation', 'Fantasy', 'Comedy'].map((genre) => (
             <button
               key={genre}
               type="button"
               aria-pressed={selectedGenre === genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`px-3.5 py-1.5 rounded-full text-xs shrink-0 transition-all cursor-pointer ${
+              className={`px-3.5 py-2 sm:py-1.5 rounded-full text-xs shrink-0 transition-all cursor-pointer ${
                 selectedGenre === genre
                   ? 'glass-pill-active'
                   : 'glass-pill text-[#c9c7cc]'
@@ -336,7 +338,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 <button
                   type="button"
                   onClick={clearAllRecent}
-                  className="text-[11px] text-[#9a9ba1] hover:text-white transition-colors cursor-pointer"
+                  className="text-[11px] text-[#9a9ba1] hover:text-white transition-colors cursor-pointer px-2 py-1 -mr-2"
                 >
                   Clear All
                 </button>
@@ -348,13 +350,24 @@ export const SearchView: React.FC<SearchViewProps> = ({
                     key={item}
                     type="button"
                     onClick={() => handleTagClick(item)}
-                    className="glass-pill group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
+                    className="glass-pill group flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
                   >
                     <span>{item}</span>
-                    <X
-                      className="w-3 h-3 text-[#8a8890] group-hover:text-white opacity-70 hover:opacity-100"
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Remove ${item} from recent searches`}
                       onClick={(e) => removeRecentSearch(item, e)}
-                    />
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          removeRecentSearch(item, e as any);
+                        }
+                      }}
+                      className="p-1 -mr-1.5 rounded-full text-[#8a8890] group-hover:text-white opacity-80 hover:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </span>
                   </button>
                 ))}
               </div>
@@ -373,7 +386,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   key={tag}
                   type="button"
                   onClick={() => handleTagClick(tag)}
-                  className="glass-pill px-3 py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
+                  className="glass-pill px-3 py-2 sm:py-1.5 rounded-full text-xs text-[#d3d1d6] cursor-pointer"
                 >
                   {tag}
                 </button>
@@ -386,7 +399,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       {/* Popular Trending Suggestions when not searching */}
       {!query && (
         <div className="space-y-4 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <span className="eyebrow block">CURATED PICKS</span>
               <h3 className="font-display font-bold text-lg text-[#f3f0ea] mt-0.5">
@@ -464,7 +477,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 type="button"
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="primary-btn h-10 px-6 rounded-xl text-xs font-semibold"
+                className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-6 rounded-xl text-xs font-semibold"
               >
                 {isLoadingMore ? (
                   <>
@@ -481,7 +494,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       ) : (
         /* Empty State */
         query && !isLoading && (
-          <div className="glass-panel py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
+          <div className="glass-panel py-14 sm:py-20 text-center rounded-2xl max-w-lg mx-auto space-y-3 px-6">
             <div className="glass-surface w-12 h-12 rounded-full flex items-center justify-center mx-auto text-white">
               <Search className="w-5 h-5" />
             </div>
@@ -497,7 +510,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   setSelectedGenre('All');
                   setSelectedType('all');
                 }}
-                className="primary-btn h-10 px-5 text-xs font-semibold rounded-xl"
+                className="primary-btn min-h-[44px] sm:min-h-0 sm:h-10 px-5 text-xs font-semibold rounded-xl"
               >
                 Clear Search
               </button>
