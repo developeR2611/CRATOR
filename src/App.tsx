@@ -716,7 +716,7 @@ export default function App() {
   };
 
   const renderRouteLoading = (label: string) => (
-    <div className="page-shell min-h-[82dvh] w-full flex flex-col items-center justify-center px-4">
+    <div className="page-shell min-h-[60dvh] w-full flex flex-col items-center justify-center px-4">
       <div className="glass-panel rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-4">
         <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
         <div className="space-y-1">
@@ -736,7 +736,7 @@ export default function App() {
   );
 
   const renderRouteError = (title: string, message: string, showRetry = true) => (
-    <div className="page-shell min-h-[82dvh] w-full flex flex-col items-center justify-center px-4 pt-20">
+    <div className="page-shell min-h-[60dvh] w-full flex flex-col items-center justify-center px-4 pt-16">
       <div className="glass-panel rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-5">
         <div className="glass-surface w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-white">
           <Film className="w-6 h-6" />
@@ -785,7 +785,7 @@ export default function App() {
         {/* HOME PAGE (/)                                                     */}
         {/* ================================================================= */}
         {route.name === 'home' && (
-          <div className="pb-6 sm:pb-12">
+          <div className="pb-2 sm:pb-4">
             <HeroSection
               featuredItems={heroFeaturedItems}
               isLoading={isHeroLoading}
@@ -855,8 +855,8 @@ export default function App() {
               />
             )}
 
-            <section className="px-4 sm:px-[4.5vw] pt-4">
-              <div className="glass-panel glass-hover rounded-2xl px-5 py-5 sm:px-8 sm:py-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <section className="px-4 sm:px-[4.5vw] pt-1">
+              <div className="glass-panel glass-hover rounded-2xl px-5 py-4 sm:px-7 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5">
                 <div>
                   <p className="eyebrow">Full library</p>
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-white">
@@ -880,7 +880,7 @@ export default function App() {
         {/* MOVIES PAGE (/movies)                                             */}
         {/* ================================================================= */}
         {route.name === 'movies' && (
-          <div className="page-shell pt-24 pb-20 space-y-6">
+          <div className="page-shell pt-20 pb-2 sm:pb-4 space-y-3 sm:space-y-4">
             <MediaCarousel
               eyebrow="Feature films"
               title="Trending movies"
@@ -906,7 +906,7 @@ export default function App() {
         {/* TV SHOWS PAGE (/tv)                                               */}
         {/* ================================================================= */}
         {route.name === 'tv' && (
-          <div className="page-shell pt-24 pb-20 space-y-6">
+          <div className="page-shell pt-20 pb-2 sm:pb-4 space-y-3 sm:space-y-4">
             <NewEpisodes
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -938,7 +938,7 @@ export default function App() {
         {/* DISCOVER PAGE (/discover)                                         */}
         {/* ================================================================= */}
         {route.name === 'discover' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="page-shell pt-20 pb-2 sm:pb-4">
             <ExploreGrid
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -953,7 +953,7 @@ export default function App() {
         {/* MY LIST PAGE (/my-list)                                           */}
         {/* ================================================================= */}
         {route.name === 'mylist' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="page-shell pt-20 pb-2 sm:pb-4">
             <WatchlistView
               watchlistIds={watchlistIds}
               mediaCatalog={allCatalogItems}
@@ -973,7 +973,7 @@ export default function App() {
         {/* SEARCH PAGE (/search?q=...)                                       */}
         {/* ================================================================= */}
         {route.name === 'search' && (
-          <div className="page-shell pt-24 pb-20">
+          <div className="page-shell pt-20 pb-2 sm:pb-4">
             <SearchView
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}
@@ -1090,7 +1090,7 @@ export default function App() {
       {/* Site Footer */}
       {!hideFooter && (
         <footer className="site-footer">
-          <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <a
                 href={TAB_PATHS.home}
@@ -1128,7 +1128,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="w-full pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[11px] text-[#77737a]">
+          <div className="w-full pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 text-[11px] text-[#77737a]">
             <p>
               CRATOR does not store any files on our server, we only link to media hosted on 3rd party services.
             </p>

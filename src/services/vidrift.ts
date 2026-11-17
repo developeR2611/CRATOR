@@ -91,18 +91,71 @@ export interface VidRiftFullscreenEvent {
   on: boolean;
 }
 
+export interface VidRiftServerEntry {
+  value: string;
+  label: string;
+  state: string;
+}
+
+export interface VidRiftOptionEntry {
+  value: string;
+  label: string;
+}
+
+export interface VidRiftSubtitleStyle {
+  size: number;
+  color: string;
+  background: string;
+  font: string;
+  position: number;
+}
+
 export interface VidRiftStateEvent {
   type: 'vidrift:state';
-  tmdbId: number;
+  tmdbId: number | string;
   mediaType: 'movie' | 'tv';
-  season?: number;
-  episode?: number;
-  currentTime?: number;
-  duration?: number;
-  paused?: boolean;
+  season?: number | null;
+  episode?: number | null;
+  anilist?: { id: number; mal: number; episode: number } | null;
+  paused: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  muted: boolean;
+  speed: number;
+  server: string;
+  servers: VidRiftServerEntry[];
+  source: string;
+  sources: VidRiftOptionEntry[];
+  quality: string;
+  qualities: VidRiftOptionEntry[];
+  audio: string;
+  audios: VidRiftOptionEntry[];
+  subtitle: string;
+  subtitles: VidRiftOptionEntry[];
+  subtitleStyle?: VidRiftSubtitleStyle;
+  subtitleOffset?: number;
+  cast?: string;
+}
+
+export interface VidRiftProvidersEvent {
+  type: 'vidrift:providers';
+  providers: VidRiftServerEntry[];
+  current: string;
+}
+
+export interface VidRiftSetPayload {
+  type: 'vidrift:set';
+  server?: string;
+  source?: string | number;
+  quality?: string | number;
+  audio?: string | number;
+  subtitle?: string;
   volume?: number;
   muted?: boolean;
-  [key: string]: any;
+  speed?: number;
+  subtitleOffset?: number;
+  subtitleStyle?: Partial<VidRiftSubtitleStyle>;
 }
 
 export type VidRiftIncomingMessage =
@@ -114,11 +167,16 @@ export type VidRiftIncomingMessage =
   | VidRiftExitEvent
   | VidRiftFullscreenEvent
   | VidRiftStateEvent
+  | VidRiftProvidersEvent
+  | { type: 'vidrift:provider-picked'; provider: string }
   | { type: 'vidrift:nextup'; [key: string]: any }
   | { type: 'vidrift:nextup-play'; [key: string]: any }
   | { type: 'vidrift:ui-visible' }
   | { type: 'vidrift:ui-hidden' }
-  | { type: 'vidrift:command-error'; command: string; field?: string; reason: string };
+  | { type: 'vidrift:progress-ended'; [key: string]: any }
+  | { type: 'vidrift:unreleased'; airDate?: string; [key: string]: any }
+  | { type: 'vidrift:wont-play'; reason?: string; [key: string]: any }
+  | { type: 'vidrift:command-error'; command: string; field?: string | null; reason: string };
 
 export type VidRiftOutgoingMessage =
   | { type: 'vidrift:play' }
@@ -126,7 +184,7 @@ export type VidRiftOutgoingMessage =
   | { type: 'vidrift:skip'; seconds: number }
   | { type: 'vidrift:resume'; currentTime: number }
   | { type: 'vidrift:get-state' }
-  | { type: 'vidrift:set'; [key: string]: any }
+  | VidRiftSetPayload
   | { type: 'vidrift:quality-preference'; label: string }
   | { type: 'vidrift:fullscreen-state'; on: boolean };
 
