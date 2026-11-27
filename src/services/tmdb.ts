@@ -498,16 +498,22 @@ export async function searchTmdb(query: string, page: number = 1): Promise<{ ite
   }
 }
 
-// 4. Get Trending on TMDB
-export async function getTmdbTrending(): Promise<MediaItem[]> {
+// 4. Get Trending on TMDB (daily or weekly, all/movie/tv)
+export async function getTmdbTrending(
+  mediaType: 'all' | 'movie' | 'tv' = 'all',
+  timeWindow: 'day' | 'week' = 'week'
+): Promise<MediaItem[]> {
   try {
-    const res = await fetch('/api/tmdb/trending');
+    const res = await fetch(
+      `/api/tmdb/trending?mediaType=${encodeURIComponent(mediaType)}&timeWindow=${encodeURIComponent(timeWindow)}`
+    );
     if (!res.ok) return [];
     const data = await res.json();
     const results = Array.isArray(data.results) ? data.results : [];
+    const defaultType = mediaType === 'tv' ? 'series' : mediaType === 'movie' ? 'movie' : undefined;
     return results
-      .filter((r: any) => r.poster_path || r.backdrop_path)
-      .map((r: any) => mapTmdbToMediaItem(r));
+      .filter((r: any) => (r.media_type !== 'person') && (r.poster_path || r.backdrop_path))
+      .map((r: any) => mapTmdbToMediaItem(r, defaultType));
   } catch {
     return [];
   }

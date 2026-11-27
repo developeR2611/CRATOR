@@ -6,7 +6,6 @@ import {
   Compass,
   Bookmark,
   Search,
-  Download,
 } from 'lucide-react';
 import { AppRoute, NavTab, TAB_PATHS } from '../utils/router';
 import { GlassButton, GlassNavbarShell } from './GlassButton';
@@ -17,14 +16,12 @@ interface HeaderProps {
   activeRoute: AppRoute['name'];
   onNavigate: (path: string) => void;
   isHidden?: boolean;
-  activeDownloadsCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeRoute,
   onNavigate,
   isHidden = false,
-  activeDownloadsCount = 0,
 }) => {
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
@@ -126,33 +123,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div className="nav-actions">
-          <GlassButton
-            href={TAB_PATHS.downloads}
-            onClick={(e) => handleLinkClick(e, TAB_PATHS.downloads)}
-            variant="navigation"
-            size="icon"
-            shape="circle"
-            active={activeRoute === 'downloads'}
-            className="nav-action relative"
-            title="Download Manager"
-            aria-label={
-              activeDownloadsCount > 0
-                ? `Downloads (${activeDownloadsCount} active)`
-                : 'Downloads'
-            }
-            aria-current={activeRoute === 'downloads' ? 'page' : undefined}
-          >
-            <Download className="w-4 h-4" />
-            {activeDownloadsCount > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-white text-[#0b0d12] text-[10px] font-mono font-bold leading-4 text-center shadow"
-                aria-hidden="true"
-              >
-                {activeDownloadsCount > 9 ? '9+' : activeDownloadsCount}
-              </span>
-            )}
-          </GlassButton>
-
           <GlassButton
             href={TAB_PATHS.search}
             onClick={(e) => handleLinkClick(e, TAB_PATHS.search)}

@@ -5,7 +5,6 @@ import {
   Plus, 
   Check, 
   Share2, 
-  Download, 
   Calendar,
   ChevronDown, 
   Loader2,
@@ -41,7 +40,6 @@ import {
 import { buildTitlePath } from '../utils/router';
 import { searchTmdbPersonId } from '../services/tmdb';
 import { GlassButton } from './GlassButton';
-import { DownloadDialog } from './DownloadDialog';
 
 interface DetailModalProps {
   item: MediaItem | null;
@@ -52,8 +50,6 @@ interface DetailModalProps {
   relatedItems: MediaItem[];
   onSelectRelated: (item: MediaItem) => void;
   onShowToast: (message: string) => void;
-  onOpenDownloads?: () => void;
-  onDownloadsChanged?: () => void;
 }
 
 const buildInitialSeasons = (item: MediaItem | null): Season[] => {
@@ -85,8 +81,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   relatedItems,
   onSelectRelated,
   onShowToast,
-  onOpenDownloads,
-  onDownloadsChanged,
 }) => {
   const initialResolvedLogo = item ? (item.logoUrl || getSynchronousKnownLogo(item)) : undefined;
   const initialActiveItem = item ? (initialResolvedLogo && !item.logoUrl ? { ...item, logoUrl: initialResolvedLogo } : item) : null;
@@ -130,13 +124,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
   const [isPersonLoading, setIsPersonLoading] = useState<boolean>(false);
   const [personError, setPersonError] = useState<string | null>(null);
   const [isBioExpanded, setIsBioExpanded] = useState<boolean>(false);
-
-  // Download dialog state
-  const [downloadDialog, setDownloadDialog] = useState<{
-    open: boolean;
-    seasonNumber?: number;
-    episodeNumber?: number;
-  }>({ open: false });
 
   const clearHeroDetailsIdleTimer = () => {
     if (heroDetailsIdleTimerRef.current !== null) {
@@ -198,7 +185,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     setPersonDetails(null);
     setPersonError(null);
     setIsBioExpanded(false);
-    setDownloadDialog({ open: false });
 
     const initialSeasonNum = item.seasons && item.seasons.length > 0 ? item.seasons[0].seasonNumber : 1;
     setSeasons(buildInitialSeasons(item));
@@ -544,13 +530,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     onClose();
   };
 
-  // Handle ESC key to close dialogs first, then main detail modal
+  // Handle ESC key to close cast dialog first, then main detail modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (downloadDialog.open) {
-          setDownloadDialog({ open: false });
-        } else if (selectedCast) {
+        if (selectedCast) {
           setSelectedCast(null);
         } else {
           handleCloseModal();
@@ -559,7 +543,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, selectedCast, downloadDialog.open]);
+  }, [onClose, selectedCast]);
 
   if (!activeItem) return null;
 
@@ -598,14 +582,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       navigator.clipboard.writeText(window.location.href);
       onShowToast('Link copied to clipboard');
     }
-  };
-
-  const handleDownload = (seasonNum?: number, episodeNum?: number) => {
-    setDownloadDialog({
-      open: true,
-      seasonNumber: seasonNum ?? (isTv ? selectedSeasonNumber : undefined),
-      episodeNumber: episodeNum,
-    });
   };
 
   const handleSeasonChange = (newSeasonNumber: number) => {
@@ -1063,23 +1039,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 >
                   <Share2 className="w-4 h-4" />
                 </GlassButton>
-
-                {/* Download Button (only when released) */}
-                {!hideTopPlayButton && (
-                  <GlassButton
-                    variant="icon"
-                    size="icon"
-                    shape="square"
-                    refractive={true}
-                    onClick={() => handleDownload()}
-                    className="w-11 h-11"
-                    title="Download"
-                    aria-label="Download"
-                    data-hero-download-btn="true"
-                  >
-                    <Download className="w-4 h-4" />
-                  </GlassButton>
-                )}
               </div>
             </div>
           </div>
@@ -1146,19 +1105,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                     </select>
                     <ChevronDown className="w-4 h-4 text-[#c9c7cc] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
-
-                  {!isSelectedSeasonUnreleased && displayedEpisodes.length > 0 && (
-                    <GlassButton
-                      variant="secondary"
-                      size="sm"
-                      shape="pill"
-                      onClick={() => handleDownload(selectedSeasonNumber)}
-                      leftIcon={<Download className="w-3.5 h-3.5" />}
-                      data-download-season-btn="true"
-                    >
-                      Download Season
-                    </GlassButton>
-                  )}
                 </div>
               </div>
             </div>
@@ -1241,32 +1187,15 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <div className="hidden sm:block shrink-0">
                         {epUnreleased ? (
                           <span className="glass-badge px-3.5 py-2 rounded-full text-[#c9c7cc] text-xs font-mono">
                             {ep.releaseDate ? `Airs ${formatReleaseDate(ep.releaseDate)}` : 'Coming Soon'}
                           </span>
                         ) : (
-                          <>
-                            <GlassButton
-                              variant="icon"
-                              size="icon"
-                              shape="circle"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownload(ep.seasonNumber, ep.episodeNumber);
-                              }}
-                              aria-label={`Download Episode ${ep.episodeNumber}`}
-                              title={`Download S${String(ep.seasonNumber).padStart(2, '0')}E${String(ep.episodeNumber).padStart(2, '0')}`}
-                              className="w-9 h-9"
-                              data-download-episode-btn={`${ep.seasonNumber}-${ep.episodeNumber}`}
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                            </GlassButton>
-                            <span className="hidden sm:inline-flex lg-btn lg-btn--pill lg-btn--size-sm lg-btn--shape-pill group-hover:!bg-[var(--lg-bg-primary-hover)] group-hover:!border-[var(--lg-border-primary-hover)] group-hover:!text-[#0b0d12]">
-                              <span className="lg-btn__content">Stream</span>
-                            </span>
-                          </>
+                          <span className="lg-btn lg-btn--pill lg-btn--size-sm lg-btn--shape-pill group-hover:!bg-[var(--lg-bg-primary-hover)] group-hover:!border-[var(--lg-border-primary-hover)] group-hover:!text-[#0b0d12]">
+                            <span className="lg-btn__content">Stream</span>
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1583,24 +1512,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
             )}
           </div>
         </div>
-      )}
-
-      {/* ================================================================= */}
-      {/* Authorized Download Quality & Season Dialog                       */}
-      {/* ================================================================= */}
-      {downloadDialog.open && (
-        <DownloadDialog
-          item={activeItem}
-          initialSeasonNumber={downloadDialog.seasonNumber}
-          initialEpisodeNumber={downloadDialog.episodeNumber}
-          onClose={() => setDownloadDialog({ open: false })}
-          onShowToast={onShowToast}
-          onOpenDownloads={() => {
-            setDownloadDialog({ open: false });
-            onOpenDownloads?.();
-          }}
-          onJobsChanged={onDownloadsChanged}
-        />
       )}
     </div>
   );

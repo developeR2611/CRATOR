@@ -143,12 +143,18 @@ app.get('/api/tmdb/status', async (_req: Request, res: Response) => {
   });
 });
 
-// 2. Trending on TMDB
-app.get('/api/tmdb/trending', async (_req: Request, res: Response) => {
-  const result = await callTmdbApi('/trending/all/week', { language: 'en-US' });
+// 2. Trending on TMDB (supports mediaType=all|movie|tv & timeWindow=day|week)
+app.get('/api/tmdb/trending', async (req: Request, res: Response) => {
+  const rawType = String(req.query.mediaType || 'all').toLowerCase();
+  const rawWindow = String(req.query.timeWindow || 'week').toLowerCase();
+  const mediaType = rawType === 'movie' || rawType === 'tv' ? rawType : 'all';
+  const timeWindow = rawWindow === 'day' ? 'day' : 'week';
+
+  const result = await callTmdbApi(`/trending/${mediaType}/${timeWindow}`, { language: 'en-US' });
   if (!result.ok) {
     return res.status(result.status || 500).json(result);
   }
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
   res.json(result.data);
 });
 

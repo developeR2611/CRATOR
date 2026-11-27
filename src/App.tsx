@@ -10,7 +10,6 @@ import { DetailModal } from './components/DetailModal';
 import { VideoPlayer } from './components/VideoPlayer';
 import { SearchView } from './components/SearchView';
 import { WatchlistView } from './components/WatchlistView';
-import { DownloadsView } from './components/DownloadsView';
 import { Toast } from './components/Toast';
 import { GlassButton } from './components/GlassButton';
 
@@ -37,11 +36,6 @@ import {
   TmdbStatus,
 } from './services/tmdb';
 import { isMediaUnreleased } from './services/availability';
-import {
-  getAuthorizedCatalog,
-  getDownloadSources,
-  listDownloads,
-} from './services/downloadsApi';
 import {
   AppRoute,
   TAB_PATHS,
@@ -117,32 +111,15 @@ export default function App() {
 
   // Dynamic TMDB data loaded from APIs
   const [, setTmdbStatus] = useState<TmdbStatus | null>(null);
+  const [tmdbTrendingDayItems, setTmdbTrendingDayItems] = useState<MediaItem[]>([]);
   const [tmdbTrendingItems, setTmdbTrendingItems] = useState<MediaItem[]>([]);
   const [tmdbPopularItems, setTmdbPopularItems] = useState<MediaItem[]>([]);
+  const [tmdbPopularTvItems, setTmdbPopularTvItems] = useState<MediaItem[]>([]);
   const [tmdbTopRatedItems, setTmdbTopRatedItems] = useState<MediaItem[]>([]);
   const [isHeroLoading, setIsHeroLoading] = useState<boolean>(true);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isRefreshingHome, setIsRefreshingHome] = useState<boolean>(false);
-  const [activeDownloadsCount, setActiveDownloadsCount] = useState<number>(0);
-
-  const refreshActiveDownloadsCount = useCallback(() => {
-    listDownloads()
-      .then((res) => {
-        const count = (res.jobs || []).filter(
-          (j) =>
-            j.status === 'downloading' ||
-            j.status === 'queued' ||
-            j.status === 'processing'
-        ).length;
-        setActiveDownloadsCount(count);
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    refreshActiveDownloadsCount();
-  }, [refreshActiveDownloadsCount]);
 
   // Sync browser URL -> route on popstate & normalize legacy /mylist alias
   useEffect(() => {
@@ -235,24 +212,33 @@ export default function App() {
   const refreshHomePage = async (showNotification = true) => {
     setIsRefreshingHome(true);
     try {
-      const [statusRes, trendingRes, popularRes, topRatedRes] = await Promise.allSettled([
-        getTmdbStatus(),
-        getTmdbTrending(),
-        getTmdbPopular('movie'),
-        getTmdbTopRated('tv'),
-      ]);
+      const [statusRes, trendingDayRes, trendingWeekRes, popularMovieRes, popularTvRes, topRatedTvRes] =
+        await Promise.allSettled([
+          getTmdbStatus(),
+          getTmdbTrending('all', 'day'),
+          getTmdbTrending('all', 'week'),
+          getTmdbPopular('movie'),
+          getTmdbPopular('tv'),
+          getTmdbTopRated('tv'),
+        ]);
 
       if (statusRes.status === 'fulfilled') {
         setTmdbStatus(statusRes.value);
       }
-      if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
-        setTmdbTrendingItems(trendingRes.value);
+      if (trendingDayRes.status === 'fulfilled' && trendingDayRes.value.length > 0) {
+        setTmdbTrendingDayItems(trendingDayRes.value);
       }
-      if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
-        setTmdbPopularItems(popularRes.value);
+      if (trendingWeekRes.status === 'fulfilled' && trendingWeekRes.value.length > 0) {
+        setTmdbTrendingItems(trendingWeekRes.value);
       }
-      if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
-        setTmdbTopRatedItems(topRatedRes.value);
+      if (popularMovieRes.status === 'fulfilled' && popularMovieRes.value.length > 0) {
+        setTmdbPopularItems(popularMovieRes.value);
+      }
+      if (popularTvRes.status === 'fulfilled' && popularTvRes.value.length > 0) {
+        setTmdbPopularTvItems(popularTvRes.value);
+      }
+      if (topRatedTvRes.status === 'fulfilled' && topRatedTvRes.value.length > 0) {
+        setTmdbTopRatedItems(topRatedTvRes.value);
       }
 
       if (showNotification) {
@@ -300,17 +286,32 @@ export default function App() {
 
   const allCatalogItems = useMemo(() => {
     const map = new Map<string, MediaItem>();
-    for (const item of MEDIA_CATALOG) {
-      map.set(getMediaKey(item), item);
+    for (const item of [
+      ...tmdbTrendingDayItems,
+      ...tmdbTrendingItems,
+      ...tmdbPopularItems,
+      ...tmdbPopularTvItems,
+      ...tmdbTopRatedItems,
+    ]) {
+      const key = getMediaKey(item);
+      if (!map.has(key)) {
+        map.set(key, item);
+      }
     }
-    for (const item of [...tmdbTrendingItems, ...tmdbPopularItems, ...tmdbTopRatedItems]) {
+    for (const item of MEDIA_CATALOG) {
       const key = getMediaKey(item);
       if (!map.has(key)) {
         map.set(key, item);
       }
     }
     return Array.from(map.values());
-  }, [tmdbTrendingItems, tmdbPopularItems, tmdbTopRatedItems]);
+  }, [
+    tmdbTrendingDayItems,
+    tmdbTrendingItems,
+    tmdbPopularItems,
+    tmdbPopularTvItems,
+    tmdbTopRatedItems,
+  ]);
 
   // Determine current route key for title / watch pages
   const activeMediaRouteKey =
@@ -368,71 +369,6 @@ export default function App() {
         }
       } else {
         detail = await getTmdbDetail(targetMediaType, lookupId);
-      }
-
-      // Fallback to CRATOR's authorized open-license library (e.g. Open Cinema Anthology /tv/900001)
-      if (!detail) {
-        try {
-          const catalogItems = await getAuthorizedCatalog();
-          const matched = catalogItems.find(
-            (c) =>
-              c.tmdbId === lookupId &&
-              (targetMediaType === 'auto' || c.mediaType === targetMediaType)
-          );
-          if (matched) {
-            let seasons: MediaItem['seasons'] = undefined;
-            if (matched.mediaType === 'tv') {
-              const srcRes = await getDownloadSources({
-                mediaType: 'tv',
-                tmdbId: matched.tmdbId,
-                seasonNumber: 1,
-              }).catch(() => null);
-              const eps = (srcRes?.episodes || []).map((ep) => ({
-                id: `open-${matched.tmdbId}-s${ep.seasonNumber}e${ep.episodeNumber}`,
-                episodeNumber: ep.episodeNumber,
-                seasonNumber: ep.seasonNumber,
-                title: ep.episodeTitle,
-                runtime: 'Open Short',
-                synopsis: matched.synopsis,
-                thumbnail: matched.backdropUrl || matched.posterUrl,
-              }));
-              seasons = [
-                {
-                  seasonNumber: 1,
-                  title: 'Season 1',
-                  episodeCount: eps.length,
-                  episodes: eps,
-                },
-              ];
-            }
-            detail = {
-              id: `tmdb-${matched.mediaType}-${matched.tmdbId}`,
-              tmdbId: Number(matched.tmdbId) || undefined,
-              title: matched.title,
-              type: matched.mediaType === 'tv' ? 'series' : 'movie',
-              releaseYear: matched.releaseYear,
-              rating: 8.1,
-              voteCount: '12K',
-              ageRating: 'PG',
-              quality: matched.qualities[0] || '1080p HD',
-              audio: '5.1 Surround',
-              platform: 'Apple TV+',
-              industry: 'Indie',
-              language: 'English',
-              cast: [],
-              runtime:
-                matched.mediaType === 'tv'
-                  ? `${matched.episodeCount || 1} Episodes`
-                  : 'Open Film',
-              genres: ['Open Cinema', matched.mediaType === 'tv' ? 'Anthology' : 'Animation'],
-              synopsis: matched.synopsis,
-              posterUrl: matched.posterUrl,
-              backdropUrl: matched.backdropUrl,
-              totalSeasons: matched.mediaType === 'tv' ? 1 : undefined,
-              seasons,
-            };
-          }
-        } catch {}
       }
 
       if (isCancelled) return;
@@ -540,9 +476,6 @@ export default function App() {
         break;
       case 'mylist':
         document.title = 'My List — CRATOR';
-        break;
-      case 'downloads':
-        document.title = 'Downloads — CRATOR';
         break;
       case 'search':
         document.title = route.query ? `Search: ${route.query} — CRATOR` : 'Search — CRATOR';
@@ -680,15 +613,25 @@ export default function App() {
     showToast('Cleared watch history');
   };
 
-  // Dynamic TMDB Hero Carousel (prefers released trending titles with genuine widescreen backdrops)
+  // Dynamic TMDB Hero Carousel (daily + weekly TMDB trending with genuine widescreen backdrops)
   const heroFeaturedItems = useMemo(() => {
-    if (tmdbTrendingItems.length > 0) {
+    const liveFeed =
+      tmdbTrendingDayItems.length > 0
+        ? [
+            ...tmdbTrendingDayItems,
+            ...tmdbTrendingItems.filter(
+              (w) => !tmdbTrendingDayItems.some((d) => getMediaKey(d) === getMediaKey(w))
+            ),
+          ]
+        : tmdbTrendingItems;
+
+    if (liveFeed.length > 0) {
       const catalogByKey = new Map<string, MediaItem>();
       for (const entry of MEDIA_CATALOG) {
         catalogByKey.set(getMediaKey(entry), entry);
       }
 
-      const enriched = tmdbTrendingItems.map((item) => {
+      const enriched = liveFeed.map((item) => {
         const existing = catalogByKey.get(getMediaKey(item));
         return existing
           ? {
@@ -707,7 +650,7 @@ export default function App() {
       const releasedWithBackdrop = withBackdrop.filter((item) => !isMediaUnreleased(item));
 
       let pool: MediaItem[];
-      if (releasedWithBackdrop.length >= 5) {
+      if (releasedWithBackdrop.length >= 6) {
         pool = releasedWithBackdrop;
       } else if (withBackdrop.length > 0) {
         const seen = new Set(releasedWithBackdrop.map(getMediaKey));
@@ -719,7 +662,7 @@ export default function App() {
         pool = enriched;
       }
 
-      return pool.slice(0, 5);
+      return pool.slice(0, 6);
     }
 
     if (isHeroLoading) {
@@ -727,15 +670,31 @@ export default function App() {
     }
 
     const list = MEDIA_CATALOG.filter((item) => item.featuredInHero);
-    return list.length > 0 ? list.slice(0, 5) : MEDIA_CATALOG.slice(0, 5);
-  }, [tmdbTrendingItems, isHeroLoading]);
+    return list.length > 0 ? list.slice(0, 6) : MEDIA_CATALOG.slice(0, 6);
+  }, [tmdbTrendingDayItems, tmdbTrendingItems, isHeroLoading]);
 
+  // Dynamic TMDB Top 10 Today (live /trending/all/day, supplemented by weekly trending; catalog fallback only if offline)
   const topTenItems = useMemo(() => {
+    const liveDaily = tmdbTrendingDayItems.length > 0 ? tmdbTrendingDayItems : tmdbTrendingItems;
+    if (liveDaily.length > 0) {
+      const seen = new Set<string>();
+      const combined: MediaItem[] = [];
+      for (const item of [...liveDaily, ...tmdbTrendingItems]) {
+        const key = getMediaKey(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(item);
+        }
+        if (combined.length >= 10) break;
+      }
+      return combined;
+    }
+
     const ranked = MEDIA_CATALOG.filter((item) => typeof item.topTenRank === 'number').sort(
       (a, b) => (a.topTenRank || 99) - (b.topTenRank || 99)
     );
     return ranked.length > 0 ? ranked.slice(0, 10) : MEDIA_CATALOG.slice(0, 10);
-  }, []);
+  }, [tmdbTrendingDayItems, tmdbTrendingItems]);
 
   const topTenKeys = useMemo(() => new Set(topTenItems.map(getMediaKey)), [topTenItems]);
 
@@ -766,7 +725,15 @@ export default function App() {
       ...homeTrendingWorldwide.map(getMediaKey),
       ...homePopularMovies.map(getMediaKey),
     ]);
-    const live = tmdbTopRatedItems.filter((item) => !seen.has(getMediaKey(item)));
+    const livePool = [...tmdbPopularTvItems, ...tmdbTopRatedItems];
+    const live: MediaItem[] = [];
+    for (const item of livePool) {
+      const key = getMediaKey(item);
+      if (!seen.has(key)) {
+        seen.add(key);
+        live.push(item);
+      }
+    }
     const catalogFallback = MEDIA_CATALOG.filter(
       (item) => (item.type === 'series' || item.type === 'anime') && !seen.has(getMediaKey(item))
     );
@@ -774,7 +741,7 @@ export default function App() {
     return combined.length > 0
       ? combined.slice(0, 14)
       : MEDIA_CATALOG.filter((item) => item.type === 'series' || item.type === 'anime');
-  }, [tmdbTopRatedItems, topTenKeys, homeTrendingWorldwide, homePopularMovies]);
+  }, [tmdbPopularTvItems, tmdbTopRatedItems, topTenKeys, homeTrendingWorldwide, homePopularMovies]);
 
   const freshMovies = useMemo(() => {
     return allCatalogItems.filter((item) => item.type === 'movie');
@@ -864,7 +831,6 @@ export default function App() {
       <Header
         activeRoute={route.name}
         isHidden={hideHeader}
-        activeDownloadsCount={activeDownloadsCount}
         onNavigate={(path) => navigate(path)}
       />
 
@@ -1062,19 +1028,6 @@ export default function App() {
         )}
 
         {/* ================================================================= */}
-        {/* DOWNLOADS MANAGER PAGE (/downloads)                               */}
-        {/* ================================================================= */}
-        {route.name === 'downloads' && (
-          <div className="pt-4 min-[801px]:pt-24 pb-20">
-            <DownloadsView
-              onOpenDetails={openDetailsPage}
-              onShowToast={showToast}
-              onActiveCountChange={setActiveDownloadsCount}
-            />
-          </div>
-        )}
-
-        {/* ================================================================= */}
         {/* SEARCH PAGE (/search?q=...)                                       */}
         {/* ================================================================= */}
         {route.name === 'search' && (
@@ -1112,8 +1065,6 @@ export default function App() {
               relatedItems={modalRelatedItems}
               onSelectRelated={openDetailsPage}
               onShowToast={showToast}
-              onOpenDownloads={() => navigate(TAB_PATHS.downloads)}
-              onDownloadsChanged={refreshActiveDownloadsCount}
             />
           ) : isRouteLoading ? (
             renderRouteLoading('Loading Title Details')
