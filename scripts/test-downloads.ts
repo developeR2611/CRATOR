@@ -17,7 +17,7 @@ async function sleep(ms: number) {
 }
 
 async function run() {
-  const { default: app } = await import('../src/server/app');
+  const { app } = await import('../src/server/app');
   const { validateDownloadUrl, resolveSafeStoragePath } = await import(
     '../src/server/downloads/security'
   );

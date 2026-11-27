@@ -1,6 +1,6 @@
 import { Episode, MediaItem } from '../types';
 
-export type NavTab = 'home' | 'movies' | 'tv' | 'discover' | 'mylist' | 'search';
+export type NavTab = 'home' | 'movies' | 'tv' | 'discover' | 'mylist' | 'search' | 'downloads';
 
 export type AppRoute =
   | { name: 'home' }
@@ -8,6 +8,7 @@ export type AppRoute =
   | { name: 'tv' }
   | { name: 'discover' }
   | { name: 'mylist' }
+  | { name: 'downloads' }
   | { name: 'search'; query: string }
   | { name: 'title'; mediaType: 'movie' | 'tv' | 'auto'; id: string }
   | { name: 'watch'; mediaType: 'movie' | 'tv'; id: string; season?: number; episode?: number }
@@ -20,6 +21,7 @@ export const TAB_PATHS: Record<NavTab, string> = {
   discover: '/discover',
   mylist: '/my-list',
   search: '/search',
+  downloads: '/downloads',
 };
 
 export function isItemTv(item: Pick<MediaItem, 'type'>): boolean {
@@ -60,6 +62,9 @@ export function parseAppRoute(pathname: string, search: string = ''): AppRoute {
   }
   if (normalized === '/my-list' || normalized === '/mylist') {
     return { name: 'mylist' };
+  }
+  if (normalized === '/downloads') {
+    return { name: 'downloads' };
   }
   if (normalized === '/search') {
     const params = new URLSearchParams(search);

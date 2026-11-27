@@ -10,6 +10,7 @@ import { DetailModal } from './components/DetailModal';
 import { VideoPlayer } from './components/VideoPlayer';
 import { SearchView } from './components/SearchView';
 import { WatchlistView } from './components/WatchlistView';
+import { DownloadsView } from './components/DownloadsView';
 import { Toast } from './components/Toast';
 import { GlassButton } from './components/GlassButton';
 
@@ -36,6 +37,11 @@ import {
   TmdbStatus,
 } from './services/tmdb';
 import { isMediaUnreleased } from './services/availability';
+import {
+  getAuthorizedCatalog,
+  getDownloadSources,
+  listDownloads,
+} from './services/downloadsApi';
 import {
   AppRoute,
   TAB_PATHS,
@@ -118,6 +124,25 @@ export default function App() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isRefreshingHome, setIsRefreshingHome] = useState<boolean>(false);
+  const [activeDownloadsCount, setActiveDownloadsCount] = useState<number>(0);
+
+  const refreshActiveDownloadsCount = useCallback(() => {
+    listDownloads()
+      .then((res) => {
+        const count = (res.jobs || []).filter(
+          (j) =>
+            j.status === 'downloading' ||
+            j.status === 'queued' ||
+            j.status === 'processing'
+        ).length;
+        setActiveDownloadsCount(count);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshActiveDownloadsCount();
+  }, [refreshActiveDownloadsCount]);
 
   // Sync browser URL -> route on popstate & normalize legacy /mylist alias
   useEffect(() => {
@@ -345,6 +370,71 @@ export default function App() {
         detail = await getTmdbDetail(targetMediaType, lookupId);
       }
 
+      // Fallback to CRATOR's authorized open-license library (e.g. Open Cinema Anthology /tv/900001)
+      if (!detail) {
+        try {
+          const catalogItems = await getAuthorizedCatalog();
+          const matched = catalogItems.find(
+            (c) =>
+              c.tmdbId === lookupId &&
+              (targetMediaType === 'auto' || c.mediaType === targetMediaType)
+          );
+          if (matched) {
+            let seasons: MediaItem['seasons'] = undefined;
+            if (matched.mediaType === 'tv') {
+              const srcRes = await getDownloadSources({
+                mediaType: 'tv',
+                tmdbId: matched.tmdbId,
+                seasonNumber: 1,
+              }).catch(() => null);
+              const eps = (srcRes?.episodes || []).map((ep) => ({
+                id: `open-${matched.tmdbId}-s${ep.seasonNumber}e${ep.episodeNumber}`,
+                episodeNumber: ep.episodeNumber,
+                seasonNumber: ep.seasonNumber,
+                title: ep.episodeTitle,
+                runtime: 'Open Short',
+                synopsis: matched.synopsis,
+                thumbnail: matched.backdropUrl || matched.posterUrl,
+              }));
+              seasons = [
+                {
+                  seasonNumber: 1,
+                  title: 'Season 1',
+                  episodeCount: eps.length,
+                  episodes: eps,
+                },
+              ];
+            }
+            detail = {
+              id: `tmdb-${matched.mediaType}-${matched.tmdbId}`,
+              tmdbId: Number(matched.tmdbId) || undefined,
+              title: matched.title,
+              type: matched.mediaType === 'tv' ? 'series' : 'movie',
+              releaseYear: matched.releaseYear,
+              rating: 8.1,
+              voteCount: '12K',
+              ageRating: 'PG',
+              quality: matched.qualities[0] || '1080p HD',
+              audio: '5.1 Surround',
+              platform: 'Apple TV+',
+              industry: 'Indie',
+              language: 'English',
+              cast: [],
+              runtime:
+                matched.mediaType === 'tv'
+                  ? `${matched.episodeCount || 1} Episodes`
+                  : 'Open Film',
+              genres: ['Open Cinema', matched.mediaType === 'tv' ? 'Anthology' : 'Animation'],
+              synopsis: matched.synopsis,
+              posterUrl: matched.posterUrl,
+              backdropUrl: matched.backdropUrl,
+              totalSeasons: matched.mediaType === 'tv' ? 1 : undefined,
+              seasons,
+            };
+          }
+        } catch {}
+      }
+
       if (isCancelled) return;
 
       if (detail) {
@@ -450,6 +540,9 @@ export default function App() {
         break;
       case 'mylist':
         document.title = 'My List — CRATOR';
+        break;
+      case 'downloads':
+        document.title = 'Downloads — CRATOR';
         break;
       case 'search':
         document.title = route.query ? `Search: ${route.query} — CRATOR` : 'Search — CRATOR';
@@ -771,6 +864,7 @@ export default function App() {
       <Header
         activeRoute={route.name}
         isHidden={hideHeader}
+        activeDownloadsCount={activeDownloadsCount}
         onNavigate={(path) => navigate(path)}
       />
 
@@ -968,6 +1062,19 @@ export default function App() {
         )}
 
         {/* ================================================================= */}
+        {/* DOWNLOADS MANAGER PAGE (/downloads)                               */}
+        {/* ================================================================= */}
+        {route.name === 'downloads' && (
+          <div className="pt-4 min-[801px]:pt-24 pb-20">
+            <DownloadsView
+              onOpenDetails={openDetailsPage}
+              onShowToast={showToast}
+              onActiveCountChange={setActiveDownloadsCount}
+            />
+          </div>
+        )}
+
+        {/* ================================================================= */}
         {/* SEARCH PAGE (/search?q=...)                                       */}
         {/* ================================================================= */}
         {route.name === 'search' && (
@@ -1005,6 +1112,8 @@ export default function App() {
               relatedItems={modalRelatedItems}
               onSelectRelated={openDetailsPage}
               onShowToast={showToast}
+              onOpenDownloads={() => navigate(TAB_PATHS.downloads)}
+              onDownloadsChanged={refreshActiveDownloadsCount}
             />
           ) : isRouteLoading ? (
             renderRouteLoading('Loading Title Details')
