@@ -5,7 +5,6 @@ import {
   Plus, 
   Check, 
   Share2, 
-  Download, 
   Calendar,
   ChevronDown, 
   Loader2,
@@ -496,12 +495,26 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       .then((episodes) => {
         if (isCancelled) return;
         fetchedKeysRef.current.add(cacheKey);
+        const existingLocalSeason = item.seasons?.find(
+          (s) => s.seasonNumber === selectedSeasonNumber
+        );
+        const resolvedEps =
+          episodes.length > 0 ? episodes : existingLocalSeason?.episodes || [];
         setFetchedSeasons((prev) => ({ ...prev, [cacheKey]: true }));
-        setEpisodesBySeason((prev) => ({ ...prev, [cacheKey]: episodes }));
+        setEpisodesBySeason((prev) => ({ ...prev, [cacheKey]: resolvedEps }));
       })
       .catch(() => {
         if (isCancelled) return;
+        const existingLocalSeason = item.seasons?.find(
+          (s) => s.seasonNumber === selectedSeasonNumber
+        );
         setFetchedSeasons((prev) => ({ ...prev, [cacheKey]: true }));
+        if (existingLocalSeason?.episodes?.length) {
+          setEpisodesBySeason((prev) => ({
+            ...prev,
+            [cacheKey]: existingLocalSeason.episodes,
+          }));
+        }
       })
       .finally(() => {
         if (!isCancelled) setIsLoadingSeasons(false);
@@ -569,10 +582,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       navigator.clipboard.writeText(window.location.href);
       onShowToast('Link copied to clipboard');
     }
-  };
-
-  const handleDownload = () => {
-    onShowToast(`Downloading stream cache for "${activeItem.title}"`);
   };
 
   const handleSeasonChange = (newSeasonNumber: number) => {
@@ -1030,22 +1039,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({
                 >
                   <Share2 className="w-4 h-4" />
                 </GlassButton>
-
-                {/* Download Button (only when released) */}
-                {!hideTopPlayButton && (
-                  <GlassButton
-                    variant="icon"
-                    size="icon"
-                    shape="square"
-                    refractive={true}
-                    onClick={handleDownload}
-                    className="w-11 h-11"
-                    title="Download offline stream"
-                    aria-label="Download offline stream"
-                  >
-                    <Download className="w-4 h-4" />
-                  </GlassButton>
-                )}
               </div>
             </div>
           </div>

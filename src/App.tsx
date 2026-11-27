@@ -971,7 +971,7 @@ export default function App() {
         {/* SEARCH PAGE (/search?q=...)                                       */}
         {/* ================================================================= */}
         {route.name === 'search' && (
-          <div className="pt-24 pb-20">
+          <div className="pt-2 min-[801px]:pt-24 pb-20">
             <SearchView
               mediaCatalog={allCatalogItems}
               onPlay={(item) => handlePlay(item)}

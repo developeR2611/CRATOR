@@ -1,16 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Search, 
-  X, 
-  Clock, 
-  Loader2, 
-  Sparkles, 
-  Film, 
-  Tv 
-} from 'lucide-react';
+import { Search, X, Loader2 } from 'lucide-react';
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
-import { searchTmdb, getTmdbStatus, TmdbStatus } from '../services/tmdb';
+import { searchTmdb } from '../services/tmdb';
 import { availabilityService } from '../services/availability';
 import { GlassButton } from './GlassButton';
 
@@ -24,19 +16,6 @@ interface SearchViewProps {
   onQueryChange?: (query: string) => void;
 }
 
-const POPULAR_SEARCH_TAGS = [
-  'Avatar',
-  'Dune',
-  'Cyberpunk',
-  'Severance',
-  'Shōgun',
-  'Deadpool',
-  'Gladiator',
-  'Arcane',
-  'Batman',
-  'Spider-Man'
-];
-
 export const SearchView: React.FC<SearchViewProps> = ({
   mediaCatalog,
   onPlay,
@@ -48,7 +27,6 @@ export const SearchView: React.FC<SearchViewProps> = ({
 }) => {
   const [query, setQuery] = useState<string>(initialQuery);
   const [selectedType, setSelectedType] = useState<'all' | 'movie' | 'series'>('all');
-  const [selectedGenre, setSelectedGenre] = useState<string>('All');
 
   // Search API State
   const [results, setResults] = useState<MediaItem[]>([]);
@@ -56,22 +34,11 @@ export const SearchView: React.FC<SearchViewProps> = ({
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const [tmdbStatus, setTmdbStatus] = useState<TmdbStatus | null>(null);
 
   // Request race-condition tracking
   const searchRequestIdRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastEmittedQueryRef = useRef<string>(initialQuery);
-
-  // Recent searches with persistence
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('crator_recent_searches');
-      return saved ? JSON.parse(saved) : ['Avatar', 'Dune', 'Severance'];
-    } catch {
-      return ['Avatar', 'Dune', 'Severance'];
-    }
-  });
 
   useEffect(() => {
     if (initialQuery !== lastEmittedQueryRef.current) {
@@ -82,39 +49,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   useEffect(() => {
     inputRef.current?.focus();
-    getTmdbStatus().then(setTmdbStatus);
   }, []);
-
-  const saveRecentSearch = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      const filtered = prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, 8);
-      try {
-        localStorage.setItem('crator_recent_searches', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  const removeRecentSearch = (text: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRecentSearches((prev) => {
-      const updated = prev.filter((s) => s !== text);
-      try {
-        localStorage.setItem('crator_recent_searches', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  const clearAllRecent = () => {
-    setRecentSearches([]);
-    try {
-      localStorage.removeItem('crator_recent_searches');
-    } catch {}
-  };
 
   // Perform search (TMDB live with catalogue fallback)
   const executeSearch = async (searchKeyword: string, targetPage: number = 1, append: boolean = false) => {
@@ -190,7 +125,6 @@ export const SearchView: React.FC<SearchViewProps> = ({
     const timer = setTimeout(() => {
       onQueryChange?.(trimmed);
       executeSearch(trimmed, 1, false);
-      saveRecentSearch(trimmed);
     }, 350);
 
     return () => clearTimeout(timer);
@@ -202,15 +136,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
     if (trimmed) {
       onQueryChange?.(trimmed);
       executeSearch(trimmed, 1, false);
-      saveRecentSearch(trimmed);
     }
-  };
-
-  const handleTagClick = (tag: string) => {
-    setQuery(tag);
-    onQueryChange?.(tag);
-    executeSearch(tag, 1, false);
-    saveRecentSearch(tag);
   };
 
   const handleLoadMore = () => {
@@ -219,9 +145,9 @@ export const SearchView: React.FC<SearchViewProps> = ({
     }
   };
 
-  const [onlyPlayable, setOnlyPlayable] = useState<boolean>(true);
+  const [onlyPlayable] = useState<boolean>(true);
 
-  // Filter currently displayed results by Availability (keep released + upcoming unreleased), Type, and Genre
+  // Filter currently displayed results by Availability (keep released + upcoming unreleased) and Type
   const filteredResults = results.filter((item) => {
     if (onlyPlayable) {
       const avail = availabilityService.checkAvailability(item);
@@ -232,24 +158,11 @@ export const SearchView: React.FC<SearchViewProps> = ({
       if (selectedType === 'movie' && isTv) return false;
       if (selectedType === 'series' && !isTv) return false;
     }
-    if (selectedGenre !== 'All' && !item.genres.includes(selectedGenre)) return false;
     return true;
   });
 
   return (
-    <div className="w-full min-h-screen py-6 px-4 md:px-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <span className="eyebrow block">DISCOVERY ARCHIVE</span>
-        <h1 className="font-display font-bold text-2xl md:text-3xl text-[#f3f0ea] tracking-tight flex items-center gap-3 flex-wrap mt-1">
-          <Search className="w-5 h-5 text-white" />
-          <span>Search</span>
-        </h1>
-        <p className="text-xs text-[#8e8a91] mt-1 font-mono">
-          Search live across movies, TV series, cast, and 4K streaming titles
-        </p>
-      </div>
-
+    <div className="w-full min-h-screen pt-2 pb-6 min-[801px]:py-6 px-4 md:px-8 space-y-5 max-w-7xl mx-auto">
       {/* Global Search Input Box */}
       <form onSubmit={handleSearchSubmit} className="relative w-full">
         <div className="relative flex items-center">
@@ -286,9 +199,8 @@ export const SearchView: React.FC<SearchViewProps> = ({
         </div>
       </form>
 
-      {/* Filter Tabs & Quick Categorization */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        {/* Type Filter */}
+      {/* Type Filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="dz-type" role="group" aria-label="Filter search by type">
           {[
             { id: 'all', label: 'All' },
@@ -309,103 +221,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             </GlassButton>
           ))}
         </div>
-
-        {/* Quick Genre Filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          {['All', 'Action', 'Sci-Fi', 'Drama', 'Thriller', 'Animation', 'Fantasy', 'Comedy'].map((genre) => (
-            <GlassButton
-              key={genre}
-              variant="pill"
-              size="sm"
-              shape="pill"
-              active={selectedGenre === genre}
-              aria-pressed={selectedGenre === genre}
-              onClick={() => setSelectedGenre(genre)}
-              className="shrink-0 px-3.5"
-            >
-              {genre}
-            </GlassButton>
-          ))}
-        </div>
       </div>
-
-      {/* Suggestions and Recent Searches (when query is short or empty) */}
-      {!query && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          {/* Recent Searches */}
-          {recentSearches.length > 0 && (
-            <div className="glass-panel rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="eyebrow flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  Recent Searches
-                </span>
-                <GlassButton
-                  variant="ghost"
-                  size="sm"
-                  shape="pill"
-                  onClick={clearAllRecent}
-                  className="!h-7 !px-2.5 text-[11px]"
-                >
-                  Clear All
-                </GlassButton>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map((item) => (
-                  <div
-                    key={item}
-                    className="inline-flex items-center rounded-full glass-surface p-0.5 gap-0.5"
-                  >
-                    <GlassButton
-                      variant="ghost"
-                      size="sm"
-                      shape="pill"
-                      onClick={() => handleTagClick(item)}
-                      className="!h-7 !px-2.5 !border-0 !bg-transparent !shadow-none text-xs"
-                    >
-                      <span>{item}</span>
-                    </GlassButton>
-                    <GlassButton
-                      variant="icon"
-                      size="icon"
-                      shape="circle"
-                      onClick={(e) => removeRecentSearch(item, e)}
-                      className="!w-6 !h-6 !border-0 !bg-transparent !shadow-none text-[#8a8890] hover:text-white"
-                      aria-label={`Remove ${item} from recent searches`}
-                      title="Remove"
-                    >
-                      <X className="w-3 h-3" />
-                    </GlassButton>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Popular Search Tags */}
-          <div className="glass-panel rounded-2xl p-5 space-y-3">
-            <span className="eyebrow block">
-              Trending Searches
-            </span>
-
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_SEARCH_TAGS.map((tag) => (
-                <GlassButton
-                  key={tag}
-                  variant="pill"
-                  size="sm"
-                  shape="pill"
-                  onClick={() => handleTagClick(tag)}
-                  className="px-3 text-[#d3d1d6]"
-                >
-                  {tag}
-                </GlassButton>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Popular Trending Suggestions when not searching */}
       {!query && (
@@ -515,7 +331,6 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 refractive={true}
                 onClick={() => {
                   setQuery('');
-                  setSelectedGenre('All');
                   setSelectedType('all');
                 }}
               >

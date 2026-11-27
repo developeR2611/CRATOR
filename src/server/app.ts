@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
+import downloadsRouter from './downloads/routes';
 
 dotenv.config();
 
@@ -113,6 +114,9 @@ app.post('/api/vidrift/availability', (req: Request, res: Response) => {
 
   res.json({ success: true, key, available });
 });
+
+// ==================== DOWNLOAD MANAGER API ROUTES ====================
+app.use('/api/downloads', downloadsRouter);
 
 // ==================== TMDB API ROUTES ====================
 

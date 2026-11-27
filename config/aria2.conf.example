@@ -1,0 +1,51 @@
+# ==============================================================================
+# CRATOR — aria2 Daemon Configuration Example
+# Bind ONLY to loopback or an internal private Docker network.
+# NEVER expose port 6800 publicly to the internet.
+# ==============================================================================
+
+# Enable JSON-RPC server on loopback only
+enable-rpc=true
+rpc-listen-all=false
+rpc-listen-port=6800
+rpc-allow-origin-all=false
+
+# Set a strong random secret and mirror it in ARIA2_RPC_SECRET
+rpc-secret=CHANGE_ME_STRONG_RANDOM_SECRET
+
+# Storage directory (must match DOWNLOAD_STORAGE_DIR on the Node backend)
+dir=/data/downloads
+
+# Multi-connection & resume support
+continue=true
+max-concurrent-downloads=3
+split=4
+max-connection-per-server=4
+min-split-size=5M
+file-allocation=trunc
+auto-file-renaming=false
+allow-overwrite=true
+
+# Network timeouts & reliability
+connect-timeout=15
+timeout=30
+max-tries=5
+retry-wait=3
+lowest-speed-limit=0
+
+# Session persistence across aria2 restarts
+save-session=/data/downloads/.aria2.session
+save-session-interval=30
+input-file=/data/downloads/.aria2.session
+
+# Disable BitTorrent / DHT / Metalink — CRATOR only authorizes direct HTTP/HTTPS downloads
+enable-dht=false
+enable-dht6=false
+enable-peer-exchange=false
+bt-enable-lpd=false
+follow-torrent=false
+follow-metalink=false
+
+# Logging
+log-level=notice
+console-log-level=warn

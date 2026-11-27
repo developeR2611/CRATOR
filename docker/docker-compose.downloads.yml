@@ -1,0 +1,56 @@
+services:
+  aria2:
+    image: alpine:3.20
+    restart: unless-stopped
+    command: >
+      sh -c "apk add --no-cache aria2 &&
+      touch /data/downloads/.aria2.session &&
+      aria2c --enable-rpc=true --rpc-listen-all=true --rpc-listen-port=6800
+      --rpc-secret=${ARIA2_RPC_SECRET:?Set ARIA2_RPC_SECRET}
+      --dir=/data/downloads --continue=true --split=4
+      --max-connection-per-server=4 --min-split-size=5M
+      --max-concurrent-downloads=${DOWNLOAD_MAX_CONCURRENCY:-3}
+      --save-session=/data/downloads/.aria2.session --save-session-interval=30
+      --input-file=/data/downloads/.aria2.session
+      --enable-dht=false --enable-peer-exchange=false --follow-torrent=false"
+    volumes:
+      - crator_downloads:/data/downloads
+    networks:
+      - internal
+
+  crator-download-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.download-service
+    restart: unless-stopped
+    depends_on:
+      - aria2
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TMDB_API_KEY: "${TMDB_API_KEY:-}"
+      ARIA2_RPC_URL: "http://aria2:6800/jsonrpc"
+      ARIA2_RPC_SECRET: "${ARIA2_RPC_SECRET:?Set ARIA2_RPC_SECRET}"
+      DOWNLOAD_AUTH_SECRET: "${DOWNLOAD_AUTH_SECRET:?Set DOWNLOAD_AUTH_SECRET}"
+      DOWNLOAD_SERVICE_API_KEY: "${DOWNLOAD_SERVICE_API_KEY:-}"
+      DOWNLOAD_STORAGE_DIR: "/data/downloads"
+      DOWNLOAD_STATE_FILE: "/data/downloads/state.json"
+      DOWNLOAD_MAX_CONCURRENCY: "${DOWNLOAD_MAX_CONCURRENCY:-3}"
+      DOWNLOAD_MAX_FILE_SIZE_BYTES: "${DOWNLOAD_MAX_FILE_SIZE_BYTES:-10737418240}"
+      DOWNLOAD_MAX_STORAGE_BYTES: "${DOWNLOAD_MAX_STORAGE_BYTES:-53687091200}"
+      DOWNLOAD_RETENTION_HOURS: "${DOWNLOAD_RETENTION_HOURS:-72}"
+      DOWNLOAD_ALLOWED_HOSTS: "${DOWNLOAD_ALLOWED_HOSTS:-media.w3.org,archive.org,*.archive.org,download.blender.org}"
+      ENABLE_FFMPEG_VALIDATION: "true"
+    volumes:
+      - crator_downloads:/data/downloads
+    networks:
+      - internal
+
+volumes:
+  crator_downloads:
+
+networks:
+  internal:
+    driver: bridge
