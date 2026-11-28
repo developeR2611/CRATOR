@@ -6,6 +6,39 @@ dotenv.config();
 
 const app = express();
 
+// Allow native Capacitor WebViews and local development to call the public API.
+// Additional trusted origins can be supplied as a comma-separated server setting.
+const allowedOrigins = new Set([
+  'capacitor://localhost',
+  'ionic://localhost',
+  'http://localhost',
+  'https://localhost',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+]);
+
+app.use((req: Request, res: Response, next) => {
+  const origin = req.headers.origin;
+  const extraOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (origin && (allowedOrigins.has(origin) || extraOrigins.includes(origin))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json());
 
 // ==================== TMDB API CONFIGURATION ====================
